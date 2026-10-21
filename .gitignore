@@ -8,3 +8,7 @@ captures/
 .kotlin/
 *.jks
 *.keystore
+
+# Local tooling
+__pycache__/
+.impeccable/
