@@ -22,7 +22,7 @@ class PdfPages {
     private var openFile: File? = null
     private var fd: ParcelFileDescriptor? = null
     private var renderer: PdfRenderer? = null
-    private val aspects = HashMap<String, FloatArray>()
+    private val aspects = java.util.concurrent.ConcurrentHashMap<String, FloatArray>()
 
     private val cache = object : LruCache<String, Bitmap>((Runtime.getRuntime().maxMemory() / 5).toInt()) {
         override fun sizeOf(key: String, value: Bitmap) = value.allocationByteCount
@@ -84,6 +84,11 @@ class PdfPages {
                 }
             } catch (e: Exception) {
                 Log.e("PdfPages", "Render failed ${file.name} p$pageIndex", e)
+                null
+            } catch (e: OutOfMemoryError) {
+                // Big zoomed pages add up; drop the cache and let the page fall back to what's on screen.
+                Log.e("PdfPages", "Out of memory rendering ${file.name} p$pageIndex at $w", e)
+                cache.evictAll()
                 null
             }
         }

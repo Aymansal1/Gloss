@@ -182,11 +182,13 @@ object RosettaFormat {
             return (min / max) * 0.6 + 0.4
         }
         if (s1.length < 2 || s2.length < 2) return 0.0
-        val counts = HashMap<String, Int>()
-        for (i in 0 until s2.length - 1) counts.merge(s2.substring(i, i + 2), 1, Int::plus)
+        // Each character pair packed into one Int, so comparing pages doesn't allocate a String per pair.
+        fun pair(s: String, i: Int) = (s[i].code shl 16) or s[i + 1].code
+        val counts = HashMap<Int, Int>()
+        for (i in 0 until s2.length - 1) counts.merge(pair(s2, i), 1, Int::plus)
         var inter = 0
         for (i in 0 until s1.length - 1) {
-            val bg = s1.substring(i, i + 2)
+            val bg = pair(s1, i)
             val c = counts[bg] ?: 0
             if (c > 0) { inter++; counts[bg] = c - 1 }
         }

@@ -39,6 +39,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
@@ -53,6 +54,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import app.gloss.ui.browse.DiscoverScreen
 import app.gloss.ui.browse.SeriesScreen
+import app.gloss.ui.components.CrashReportDialog
 import app.gloss.ui.components.GlassTabBar
 import app.gloss.ui.components.LocalBottomBarPadding
 import app.gloss.ui.components.LocalSharedScope
@@ -71,7 +73,9 @@ import app.gloss.ui.theme.Motion
 import app.gloss.ui.theme.isGlossDark
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,7 +88,14 @@ class MainActivity : ComponentActivity() {
                 val style = SystemBarStyle.auto(AndroidColor.TRANSPARENT, AndroidColor.TRANSPARENT) { dark }
                 enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
             }
-            GlossTheme(dark = dark) { AppNav() }
+            var crash by remember { mutableStateOf<String?>(null) }
+            LaunchedEffect(Unit) { crash = withContext(Dispatchers.IO) { CrashLog.pending(applicationContext) } }
+            GlossTheme(dark = dark) {
+                AppNav()
+                crash?.let { report ->
+                    CrashReportDialog(report, onDismiss = { CrashLog.clear(applicationContext); crash = null })
+                }
+            }
         }
     }
 }

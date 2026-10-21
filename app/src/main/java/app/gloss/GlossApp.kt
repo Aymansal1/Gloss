@@ -50,6 +50,7 @@ class GlossApp : Application(), SingletonImageLoader.Factory {
 
     override fun onCreate() {
         super.onCreate()
+        CrashLog.install(this)
         container = AppContainer(this)
         appScope.launch {
             container.library.scan()

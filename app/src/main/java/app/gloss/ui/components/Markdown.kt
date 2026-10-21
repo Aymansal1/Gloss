@@ -64,14 +64,14 @@ fun inlineMarkdown(text: String, highlight: List<String> = emptyList(), marker: 
         }
     }
     if (highlight.isEmpty() || marker == null) return base
-    val lower = base.text.lowercase()
+    val text = base.text
     return buildAnnotatedString {
         append(base)
         for (term in highlight) {
             if (term.isEmpty()) continue
             var from = 0
             while (true) {
-                val k = lower.indexOf(term, from)
+                val k = text.indexOf(term, from, ignoreCase = true)
                 if (k < 0) break
                 addStyle(marker, k, k + term.length)
                 from = k + term.length

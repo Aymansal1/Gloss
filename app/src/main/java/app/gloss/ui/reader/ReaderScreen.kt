@@ -113,8 +113,13 @@ import app.gloss.ui.theme.GoldLeaf
 import app.gloss.ui.theme.Motion
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 private enum class SheetTab(val label: String) { Translation("Translation"), Original("Original"), Summary("Summary") }
@@ -138,7 +143,8 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
     }
 
     val content by produceState<IssueContent?>(null, id, issue.stamp) { value = c.library.content(id) }
-    val aspects by produceState(FloatArray(0), id, issue.hasScan) {
+    // Page shapes come from the PDF; wait for them so the reader opens on the right page.
+    val pageAspects by produceState<FloatArray?>(null, id, issue.hasScan) {
         value = if (issue.hasScan) c.pdf.aspects(issue.pdfFile) else FloatArray(0)
     }
     val rtl by c.reading.rightToLeft.collectAsState()
@@ -158,19 +164,32 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
     val terms = remember(query) { query?.let { SearchText.parseQuery(it).highlightTerms }.orEmpty() }
 
     val cnt = content
-    val totalPages = maxOf(aspects.size, cnt?.lastTextPage ?: 0)
-    if (cnt == null || totalPages == 0) {
-        if (cnt == null) Box(Modifier.fillMaxSize().background(g.ground), contentAlignment = Alignment.Center) {
+    val aspects = pageAspects
+    if (cnt == null || aspects == null) {
+        Box(Modifier.fillMaxSize().background(g.ground), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(strokeWidth = 2.dp, color = g.lapis)
-        } else Message("This issue has no pages to show.")
+        }
+        return
+    }
+    val totalPages = maxOf(aspects.size, cnt.lastTextPage)
+    if (totalPages == 0) {
+        Message("This issue has no pages to show.")
         return
     }
 
     val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     val useSpreads = spreadsOn && landscape && issue.hasScan
     val screens = remember(totalPages, useSpreads) { Spreads.layout(totalPages, useSpreads) }
-    val models = remember(cnt) { HashMap<Int, PageModel>() }
+    val models = remember(cnt) { ConcurrentHashMap<Int, PageModel>() }
     fun model(page: Int): PageModel = models.getOrPut(page) { PageModel(page, cnt.page(page), cnt.regionsFor(page)) }
+    // Matching text to boxes on the scan is the slow part, so do it in the background ahead of
+    // time, nearest pages first, instead of while a page is being swiped in.
+    LaunchedEffect(cnt) {
+        withContext(Dispatchers.Default) {
+            val from = anchorPage
+            (1..totalPages).sortedBy { abs(it - from) }.forEach { p -> ensureActive(); model(p) }
+        }
+    }
 
     val scope = rememberCoroutineScope()
     val haze = remember { HazeState() }
