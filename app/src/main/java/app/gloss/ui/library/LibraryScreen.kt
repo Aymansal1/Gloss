@@ -108,7 +108,7 @@ fun LibraryScreen(nav: Nav, reselect: Flow<Unit> = emptyFlow()) {
         if (view == 0) {
             if (downloading.isNotEmpty()) {
                 item(key = "downloading") {
-                    Section(Modifier.padding(top = 8.dp), header = "Downloading") {
+                    Section(Modifier.animateItem().padding(top = 8.dp), header = "Downloading") {
                         val ids = downloading.sorted()
                         ids.forEachIndexed { i, id ->
                             DownloadRow(
@@ -133,7 +133,7 @@ fun LibraryScreen(nav: Nav, reselect: Flow<Unit> = emptyFlow()) {
                 }
             } else if (issues.isNotEmpty()) {
                 item(key = "issues") {
-                    Section(Modifier.padding(top = if (downloading.isNotEmpty()) 26.dp else 8.dp)) {
+                    Section(Modifier.animateItem().padding(top = if (downloading.isNotEmpty()) 26.dp else 8.dp)) {
                         issues.forEachIndexed { i, issue ->
                             val cat = catalog.firstOrNull { it.id == issue.id }
                             val hasUpdate = cat != null && cat.version.isNotBlank() && issue.version.isNotBlank() &&

@@ -5,7 +5,9 @@ import android.util.Log
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -497,19 +499,22 @@ private fun OptionsPopover(
     val g = Gloss.colors
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 60.dp
     val density = androidx.compose.ui.platform.LocalDensity.current
+    // Dismissing plays the exit back into the "Aa" button first, then removes the popup.
+    val shown = remember { MutableTransitionState(false) }
+    var closing by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { shown.targetState = true }
+    LaunchedEffect(shown.isIdle, closing) { if (closing && shown.isIdle && !shown.currentState) onDismiss() }
+    val origin = androidx.compose.ui.graphics.TransformOrigin(1f, 0f)
     Popup(
         alignment = Alignment.TopEnd,
         offset = with(density) { IntOffset(-10.dp.roundToPx(), top.roundToPx()) },
-        onDismissRequest = onDismiss,
+        onDismissRequest = { closing = true; shown.targetState = false },
         properties = PopupProperties(focusable = true),
     ) {
-        var shown by remember { mutableStateOf(false) }
-        LaunchedEffect(Unit) { shown = true }
         AnimatedVisibility(
             shown,
-            enter = fadeIn(Motion.settle()) + scaleIn(Motion.move(), initialScale = 0.86f,
-                transformOrigin = androidx.compose.ui.graphics.TransformOrigin(1f, 0f)),
-            exit = fadeOut() + scaleOut(),
+            enter = fadeIn(Motion.settle()) + scaleIn(Motion.move(), initialScale = 0.9f, transformOrigin = origin),
+            exit = fadeOut(tween(120)) + scaleOut(tween(150), targetScale = 0.92f, transformOrigin = origin),
         ) {
             Column(
                 Modifier

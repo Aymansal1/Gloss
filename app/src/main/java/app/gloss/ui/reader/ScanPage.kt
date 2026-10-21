@@ -77,6 +77,8 @@ import app.gloss.ui.container
 import app.gloss.ui.theme.Gloss
 import app.gloss.ui.theme.GoldLeaf
 import app.gloss.ui.theme.InterText
+import app.gloss.ui.theme.Motion
+import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.math.max
 import kotlin.math.min
@@ -153,10 +155,16 @@ fun ScanPage(
         val center = Offset(cw / 2f, ch / 2f)
 
         // The gold sweep restarts whenever a different box is selected.
+        // The card with the English reveals fast; the gold leaf takes a little longer to lay down.
         val sweep = remember { Animatable(0f) }
+        val reveal = remember { Animatable(0f) }
         LaunchedEffect(selectedRegion) {
             sweep.snapTo(0f)
-            if (selectedRegion != null) sweep.animateTo(1f, spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = 90f))
+            reveal.snapTo(0f)
+            if (selectedRegion != null) {
+                launch { reveal.animateTo(1f, Motion.reveal()) }
+                sweep.animateTo(1f, spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = 160f))
+            }
         }
 
         Box(
@@ -257,7 +265,7 @@ fun ScanPage(
                 anchor = anchor,
                 bottomReserve = with(density) { calloutBottom.toPx() },
                 textScale = textScale,
-                appear = sweep.value,
+                appear = reveal.value,
                 onOpen = onOpenGloss,
             )
         }

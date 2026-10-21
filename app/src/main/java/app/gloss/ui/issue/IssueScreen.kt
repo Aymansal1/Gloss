@@ -375,7 +375,7 @@ private fun MorphButton(
     ) {
         AnimatedContent(
             targetState = state::class,
-            transitionSpec = { (fadeIn(tween(180)) + scaleIn(Motion.press(), initialScale = 0.8f)) togetherWith fadeOut(tween(120)) },
+            transitionSpec = { (fadeIn(tween(180)) + scaleIn(Motion.move(), initialScale = 0.92f)) togetherWith fadeOut(tween(120)) },
             label = "morphContent",
         ) { kind ->
             when (kind) {

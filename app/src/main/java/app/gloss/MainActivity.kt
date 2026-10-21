@@ -201,7 +201,7 @@ private fun Home(nav: Nav) {
             CompositionLocalProvider(LocalBottomBarPadding provides TabBarClearance) {
                 AnimatedContent(
                     targetState = tab,
-                    transitionSpec = { fadeIn(tween(180)) togetherWith fadeOut(tween(120)) },
+                    transitionSpec = { fadeIn(tween(90)) togetherWith ExitTransition.None },
                     label = "tabs",
                 ) { t ->
                     tabStates.SaveableStateProvider(t) {

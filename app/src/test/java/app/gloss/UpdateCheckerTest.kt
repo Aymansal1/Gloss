@@ -11,13 +11,22 @@ class UpdateCheckerTest {
     @Test fun parsesTheLatestRelease() {
         val json = """
             {"tag_name":"v1.0.42","body":"Faster search","html_url":"https://github.com/Aymansal1/Gloss/releases/tag/v1.0.42",
-             "assets":[{"name":"notes.txt","browser_download_url":"https://x/notes.txt"},
-                       {"name":"Gloss-1.0.42.apk","browser_download_url":"https://x/Gloss-1.0.42.apk"}]}
+             "assets":[{"name":"notes.txt","browser_download_url":"https://github.com/Aymansal1/Gloss/releases/download/v1.0.42/notes.txt"},
+                       {"name":"Gloss-1.0.42.apk","browser_download_url":"https://github.com/Aymansal1/Gloss/releases/download/v1.0.42/Gloss-1.0.42.apk"}]}
         """.trimIndent()
         val r = UpdateChecker.parseLatest(json)!!
         assertEquals("1.0.42", r.version)
         assertEquals("Faster search", r.notes)
-        assertEquals("https://x/Gloss-1.0.42.apk", r.apkUrl)
+        assertEquals("https://github.com/Aymansal1/Gloss/releases/download/v1.0.42/Gloss-1.0.42.apk", r.apkUrl)
+    }
+
+    @Test fun ignoresLinksOutsideTheRepo() {
+        val r = UpdateChecker.parseLatest(
+            """{"tag_name":"v9.0.0","html_url":"https://evil.example/release",
+                "assets":[{"name":"Gloss.apk","browser_download_url":"https://evil.example/Gloss.apk"}]}""",
+        )!!
+        assertNull(r.apkUrl)
+        assertEquals("https://github.com/Aymansal1/Gloss/releases/latest", r.pageUrl)
     }
 
     @Test fun releaseWithoutApkStillParses() {

@@ -85,7 +85,8 @@ fun Modifier.pressable(
 ): Modifier = composed {
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed && enabled) scaleTo else 1f, Motion.press(), label = "press")
+    val down = pressed && enabled
+    val scale by animateFloatAsState(if (down) scaleTo else 1f, if (down) Motion.pressIn() else Motion.press(), label = "press")
     val haptics = LocalHapticFeedback.current
     this
         .graphicsLayer { scaleX = scale; scaleY = scale }

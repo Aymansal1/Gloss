@@ -133,12 +133,14 @@ class LibraryStore(private val root: File) {
         ZipFile(zip).use { z ->
             val entry = z.entries().asSequence().firstOrNull { baseName(it.name).equals("metadata.txt", true) }
                 ?: return emptyMap()
-            return RosettaFormat.parseMetadata(z.getInputStream(entry).bufferedReader().readText())
+            return RosettaFormat.parseMetadata(z.getInputStream(entry).use { String(it.readNBytes(1 shl 20), Charsets.UTF_8) })
         }
     }
 
     companion object {
         fun safeDirName(id: String) = id.replace(Regex("[^A-Za-z0-9._-]"), "_").take(120)
+            // "", "." and ".." would point at the library folder itself or its parent.
+            .let { if (it.all { c -> c == '.' }) "_$it" else it }
         fun baseName(path: String) = path.substringAfterLast('/').substringAfterLast('\\')
     }
 }
@@ -156,14 +158,20 @@ class IssueContent(
 
     companion object {
         val EMPTY = IssueContent(emptyMap(), emptyMap(), emptyMap())
+        private const val MAX_TEXT_BYTES = 64 * 1024 * 1024
 
         fun load(zip: File): IssueContent {
             if (!zip.exists()) return EMPTY
             return try {
                 ZipFile(zip).use { z ->
                     val entries = z.entries().asSequence().filter { !it.isDirectory }.toList()
-                    fun read(e: java.util.zip.ZipEntry) =
-                        z.getInputStream(e).bufferedReader(Charsets.UTF_8).readText()
+                    // Real text files are a few MB; anything past the cap is cut off rather than
+                    // letting a broken or hostile ZIP exhaust memory every time the issue opens.
+                    fun read(e: java.util.zip.ZipEntry): String =
+                        z.getInputStream(e).use { input ->
+                            val bytes = input.readNBytes(MAX_TEXT_BYTES)
+                            String(bytes, Charsets.UTF_8)
+                        }
 
                     val pagesRaw = HashMap<Int, String>()
                     // Per-page files first, then the master file wins where both exist (desktop priority).

@@ -64,6 +64,10 @@ class UpdateChecker(
     }
 
     companion object {
+        /** Update links are only followed when they point at this repo's own releases. */
+        private const val RELEASES = "https://github.com/Aymansal1/Gloss/releases/"
+        private const val DOWNLOADS = "${RELEASES}download/"
+
         fun parseLatest(json: String): AppRelease? = runCatching {
             val o = JSONObject(json)
             val tag = o.getString("tag_name")
@@ -72,10 +76,11 @@ class UpdateChecker(
                 .map { assets!!.getJSONObject(it) }
                 .firstOrNull { it.optString("name").endsWith(".apk") }
                 ?.optString("browser_download_url")
+                ?.takeIf { it.startsWith(DOWNLOADS) }
             AppRelease(
                 version = tag.removePrefix("v"),
                 notes = o.optString("body"),
-                pageUrl = o.optString("html_url"),
+                pageUrl = o.optString("html_url").takeIf { it.startsWith(RELEASES) } ?: "${RELEASES}latest",
                 apkUrl = apk,
             )
         }.getOrNull()

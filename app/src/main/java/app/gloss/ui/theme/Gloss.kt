@@ -201,8 +201,14 @@ val GlossTypeScale = GlossType(
 
 /** iOS-like motion: springs everywhere, nothing linear, nothing that bounces twice. */
 object Motion {
-    /** Presses and toggles: quick, with a hint of overshoot. */
-    fun <T> press(): FiniteAnimationSpec<T> = spring(dampingRatio = 0.62f, stiffness = 700f)
+    /** The finger going down: the element sinks at once, no bounce. */
+    fun <T> pressIn(): FiniteAnimationSpec<T> = spring(dampingRatio = 1f, stiffness = 1400f)
+
+    /** Releases and toggles: quick, with a hint of overshoot. */
+    fun <T> press(): FiniteAnimationSpec<T> = spring(dampingRatio = 0.7f, stiffness = 600f)
+
+    /** Content the reader is waiting on (the gloss card): in fast, no bounce. */
+    fun <T> reveal(): FiniteAnimationSpec<T> = spring(dampingRatio = 1f, stiffness = 650f)
 
     /** Things that move to a new place (selection pills, sheets, cards). */
     fun <T> move(): FiniteAnimationSpec<T> = spring(dampingRatio = 0.86f, stiffness = 420f)
