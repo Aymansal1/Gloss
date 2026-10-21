@@ -38,7 +38,7 @@ class AppContainer(app: Application) {
     val reading = ReadingState(app)
     val downloads = DownloadCenter(app)
     val fetcher = SourceFetcher(http)
-    val pdf = PdfPages()
+    val pdf = PdfPages(app)
     val updates = UpdateChecker(http, BuildConfig.VERSION_NAME)
 }
 

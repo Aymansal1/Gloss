@@ -1,6 +1,7 @@
 package app.gloss.ui.reader
 
 import android.app.Activity
+import android.util.Log
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -187,7 +188,10 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
     LaunchedEffect(cnt) {
         withContext(Dispatchers.Default) {
             val from = anchorPage
-            (1..totalPages).sortedBy { abs(it - from) }.forEach { p -> ensureActive(); model(p) }
+            (1..totalPages).sortedBy { abs(it - from) }.forEach { p ->
+                ensureActive()
+                runCatching { model(p) }.onFailure { Log.e("Reader", "Couldn't prepare page $p", it) }
+            }
         }
     }
 

@@ -144,8 +144,10 @@ fun ScanPage(
         // Render sharper when zoomed in.
         val targetWidth = (contentW * (if (scale > 1.6f) 2f else 1f)).roundToInt().coerceAtLeast(240)
         var bitmap by remember(pdf, pageIndex) { mutableStateOf<Bitmap?>(c.pdf.cached(pdf, pageIndex, contentW.roundToInt())) }
+        var failed by remember(pdf, pageIndex) { mutableStateOf(false) }
         LaunchedEffect(pdf, pageIndex, targetWidth) {
-            c.pdf.render(pdf, pageIndex, targetWidth)?.let { bitmap = it }
+            val b = c.pdf.render(pdf, pageIndex, targetWidth)
+            if (b != null) bitmap = b else if (bitmap == null) failed = true
         }
 
         val center = Offset(cw / 2f, ch / 2f)
@@ -222,7 +224,15 @@ fun ScanPage(
                         contentScale = ContentScale.FillBounds, modifier = Modifier.fillMaxSize())
                 } else {
                     Box(Modifier.fillMaxSize().background(Color(0xFF11142A)), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(strokeWidth = 2.dp, color = Color(0xFF5068FF))
+                        if (failed) {
+                            Text(
+                                "This page couldn't be drawn.\nIts text is still in the sheet below.",
+                                style = Gloss.type.subhead, color = Color(0xFF9DA2C6), textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(24.dp),
+                            )
+                        } else {
+                            CircularProgressIndicator(strokeWidth = 2.dp, color = Color(0xFF5068FF))
+                        }
                     }
                 }
                 if (model != null) {
