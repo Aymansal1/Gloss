@@ -83,6 +83,10 @@ import java.io.File
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import androidx.compose.foundation.ScrollState
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
 
 private const val MAX_ZOOM = 5f
 private const val DOUBLE_TAP_ZOOM = 2.5f
@@ -342,7 +346,8 @@ private fun GlossCallout(
                     .pressable(onOpen, scaleTo = 0.98f, onClickLabel = "Read the whole page")
                     .padding(horizontal = 16.dp, vertical = 14.dp),
             ) {
-                Column(Modifier.verticalScroll(rememberScrollState()).weight(1f, fill = false)) {
+                val scroll = rememberScrollState()
+                Column(Modifier.weight(1f, fill = false).fadeWhenMore(scroll).verticalScroll(scroll)) {
                     if (note.translation.isEmpty()) {
                         Text("No translation is linked to this box.", style = Gloss.type.subhead, color = g.secondary)
                     }
@@ -428,3 +433,17 @@ fun PageThumb(pdf: File, pageIndex: Int, modifier: Modifier = Modifier) {
         bmp?.let { Image(it.asImageBitmap(), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
     }
 }
+
+/** Fades the bottom edge while there's more to scroll, so cut-off text reads as "keeps going". */
+private fun Modifier.fadeWhenMore(scroll: ScrollState): Modifier =
+    graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+        .drawWithContent {
+            drawContent()
+            if (scroll.canScrollForward) {
+                val fade = 28.dp.toPx().coerceAtMost(size.height / 2)
+                drawRect(
+                    Brush.verticalGradient(listOf(Color.Transparent, Color.Black), startY = size.height - fade, endY = size.height),
+                    blendMode = BlendMode.DstOut,
+                )
+            }
+        }

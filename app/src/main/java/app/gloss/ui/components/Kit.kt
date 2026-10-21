@@ -313,6 +313,8 @@ fun Cell(
     title: String,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
+    /** A last line that always shows, however long [subtitle] runs. */
+    detail: String? = null,
     titleColor: Color = Gloss.colors.text,
     leading: (@Composable () -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
@@ -338,7 +340,10 @@ fun Cell(
                 Column(Modifier.weight(1f)) {
                     Text(title, style = Gloss.type.body, color = titleColor, maxLines = titleMaxLines, overflow = TextOverflow.Ellipsis)
                     if (subtitle != null) {
-                        Text(subtitle, style = Gloss.type.footnote, color = c.secondary, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                        Text(subtitle, style = Gloss.type.footnote, color = c.secondary, maxLines = if (detail != null) 2 else 3, overflow = TextOverflow.Ellipsis)
+                    }
+                    if (detail != null) {
+                        Text(detail, style = Gloss.type.footnote, color = c.secondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
                 if (trailing != null) {

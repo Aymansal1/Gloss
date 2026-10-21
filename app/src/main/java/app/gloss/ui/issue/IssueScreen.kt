@@ -93,6 +93,9 @@ import app.gloss.ui.theme.Gloss
 import app.gloss.ui.theme.Motion
 import app.gloss.ui.theme.Pigment
 import kotlinx.coroutines.launch
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.platform.LocalConfiguration
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -441,11 +444,14 @@ private fun Facts(item: CatalogItem?, installed: InstalledIssue?) {
             Cell(
                 title = label,
                 titleColor = Gloss.colors.secondary,
+                titleMaxLines = 2,
                 trailing = {
+                    // Capped so a long value wraps instead of squeezing its label to "On this …".
                     Text(
                         value, style = Gloss.type.body,
                         color = if (link != null) Gloss.colors.lapis else Gloss.colors.text,
-                        textAlign = TextAlign.End, maxLines = 2,
+                        textAlign = TextAlign.End, maxLines = 3, overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.widthIn(max = LocalConfiguration.current.screenWidthDp.dp * 0.55f),
                     )
                 },
                 onClick = link?.let { l -> { uri.openUri(l) } },

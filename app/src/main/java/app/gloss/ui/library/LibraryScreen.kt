@@ -216,8 +216,9 @@ private fun IssueRow(
     Box {
         Cell(
             title = issue.magazineName,
-            subtitle = listOfNotNull(
-                prettyDate(issue.title),
+            // A long issue name wraps on its own lines so what's on the phone always shows.
+            subtitle = prettyDate(issue.title),
+            detail = listOfNotNull(
                 if (issue.hasScan) "Scan and text" else "Text only",
                 size?.let { formatBytes(it) },
             ).joinToString(" · "),
