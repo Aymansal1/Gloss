@@ -12,6 +12,7 @@ import androidx.work.testing.WorkManagerTestInitHelper
 import app.gloss.GlossApp
 import app.gloss.Nav
 import app.gloss.data.InstalledIssue
+import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.github.takahirom.roborazzi.captureScreenRoboImage
 import kotlinx.coroutines.runBlocking
 import org.junit.rules.ExternalResource
@@ -131,6 +132,7 @@ class InstallFixture : ExternalResource() {
 private val shotsDir = File("build/outputs/roborazzi").apply { mkdirs() }
 
 /** The whole screen, popups and dialogs included. */
+@OptIn(ExperimentalRoborazziApi::class)
 fun ComposeTestRule.shot(name: String) {
     waitForIdle()
     captureScreenRoboImage(File(shotsDir, "$name.png").path)

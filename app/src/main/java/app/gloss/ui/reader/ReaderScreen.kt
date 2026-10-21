@@ -88,6 +88,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -475,10 +478,11 @@ private fun GlassText(haze: HazeState, text: String, label: String, onClick: () 
         Modifier
             .size(44.dp)
             .pressable(onClick, scaleTo = 0.88f, onClickLabel = label, role = Role.Button)
-            .glass(haze, CircleShape, tint = g.raised),
+            .glass(haze, CircleShape, tint = g.raised)
+            .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = Gloss.type.headline, color = g.text)
+        Text(text, style = Gloss.type.headline, color = g.text, modifier = Modifier.clearAndSetSemantics {})
     }
 }
 
