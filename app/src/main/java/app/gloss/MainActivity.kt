@@ -55,6 +55,8 @@ import androidx.navigation.navArgument
 import app.gloss.ui.browse.DiscoverScreen
 import app.gloss.ui.browse.SeriesScreen
 import app.gloss.ui.components.CrashReportDialog
+import app.gloss.ui.components.WhatsNew
+import app.gloss.ui.components.WhatsNewDialog
 import app.gloss.ui.components.GlassTabBar
 import app.gloss.ui.components.LocalBottomBarPadding
 import app.gloss.ui.components.LocalSharedScope
@@ -89,12 +91,18 @@ class MainActivity : ComponentActivity() {
                 enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
             }
             var crash by remember { mutableStateOf<String?>(null) }
-            LaunchedEffect(Unit) { crash = withContext(Dispatchers.IO) { CrashLog.pending(applicationContext) } }
+            var whatsNew by remember { mutableStateOf(false) }
+            LaunchedEffect(Unit) {
+                crash = withContext(Dispatchers.IO) { CrashLog.pending(applicationContext) }
+                whatsNew = withContext(Dispatchers.IO) { WhatsNew.pending(applicationContext) }
+            }
             GlossTheme(dark = dark) {
                 AppNav()
                 crash?.let { report ->
                     CrashReportDialog(report, onDismiss = { CrashLog.clear(applicationContext); crash = null })
                 }
+                // After any crash report, so the two never stack.
+                if (whatsNew && crash == null) WhatsNewDialog(onDismiss = { whatsNew = false })
             }
         }
     }
