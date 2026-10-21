@@ -17,6 +17,7 @@ import com.github.takahirom.roborazzi.captureScreenRoboImage
 import kotlinx.coroutines.runBlocking
 import org.junit.rules.ExternalResource
 import java.io.File
+import java.nio.ByteBuffer
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -56,6 +57,7 @@ object Fixtures {
 
     /** Writes the issue to the library, primes the page images, and makes WorkManager usable. */
     fun install() {
+        warmUpNativeGraphics()
         val app = app()
         runCatching { WorkManagerTestInitHelper.initializeTestWorkManager(app) }
         val c = app.container
@@ -70,6 +72,17 @@ object Fixtures {
         val pdf = File(dir, "scan.pdf").apply { writeText("%PDF-1.4 stand-in for tests") }
         c.pdf.primeForTests(pdf, pages.mapIndexed { i, boxes -> drawPage(i + 1, boxes) })
         runBlocking { c.library.scan() }
+    }
+
+    /**
+     * Robolectric's graphics natives look up java.nio's buffer classes the first time one is
+     * used. If a render thread gets there first while the test thread is also drawing, the
+     * lookup can fail and abort the whole test JVM, so do it here on the test thread first.
+     */
+    private fun warmUpNativeGraphics() {
+        val bmp = Bitmap.createBitmap(2, 2, Bitmap.Config.ARGB_8888)
+        bmp.copyPixelsToBuffer(ByteBuffer.allocate(bmp.byteCount))
+        bmp.recycle()
     }
 
     private fun writeZip(zip: File) {
