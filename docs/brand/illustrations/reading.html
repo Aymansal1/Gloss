@@ -1,0 +1,72 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="phone.css">
+<style>
+.stage { width: 1600px; height: 960px; gap: 90px; padding-top: 70px; align-items: flex-start; }
+.col { display: flex; flex-direction: column; align-items: center; gap: 34px; }
+.cap { color: #fff; text-align: center; font-size: 26px; font-weight: 650; letter-spacing: -.02em; }
+.cap small { display: block; margin-top: 6px; font-size: 17px; font-weight: 450; color: rgba(255,255,255,.62); letter-spacing: 0; }
+.land { width: 860px; height: 410px; border-radius: 52px; background: #05060f; padding: 10px; box-shadow: 0 50px 100px rgba(0,0,0,.55), inset 0 0 0 1.5px rgba(255,255,255,.12); margin-top: 150px; }
+.land .screen { background: #000; display: flex; justify-content: center; align-items: center; gap: 0; }
+.page { position: relative; background: #f7f2e6; flex: none; overflow: hidden; }
+.hd { position: absolute; border-radius: 4px; background: #2b2620; opacity: .85; }
+.ch { position: absolute; border-radius: 2px; background: #2b2620; opacity: .8; }
+.mg { position: absolute; background: #fcfbf8; border-radius: 3px; display: flex; align-items: center; justify-content: center; text-align: center; color: #14161f; font-weight: 600; padding: 6px; line-height: 1.22; box-shadow: 0 0 0 1px rgba(43,38,32,.06); }
+.shot { position: absolute; border-radius: 4px; background: #3b4b8f; overflow: hidden; }
+.shot:after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 55%; background: #8fa3e8; opacity: .7; clip-path: polygon(0 60%, 25% 25%, 45% 50%, 68% 0, 100% 45%, 100% 100%, 0 100%); }
+.kick { position: absolute; height: 12px; border-radius: 2px; background: var(--verm); }
+.top { position: absolute; top: 46px; left: 10px; right: 10px; display: flex; gap: 6px; align-items: center; z-index: 3; }
+.gl { background: rgba(24,28,55,.72); border: .6px solid rgba(255,255,255,.12); color: #eef0fa; }
+.circ { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; flex: none; }
+.capsule { flex: 1; height: 40px; border-radius: 20px; text-align: center; padding-top: 4px; }
+.capsule b { display: block; font-size: 13px; font-weight: 600; } .capsule span { font-size: 10.5px; color: #9da2c6; }
+.gutter { width: 2px; align-self: stretch; background: linear-gradient(90deg, rgba(0,0,0,.25), rgba(0,0,0,0)); position: absolute; }
+</style></head><body>
+<div class="stage" id="stage">
+  <div class="col">
+    <div class="phone"><div class="screen" style="background:#000">
+      <div class="status" style="color:#fff"><span>9:41</span><span>●●● ▮</span></div><div class="punch"></div>
+      <div class="page" id="p1" style="position:absolute;left:0;top:100px;width:340px;height:474px"></div>
+      <div style="position:absolute;left:0;right:0;bottom:0;height:150px;border-radius:22px 22px 0 0;background:rgba(24,28,55,.96);border-top:.6px solid rgba(255,255,255,.12)">
+        <div style="width:36px;height:5px;border-radius:3px;background:#6a6f96;margin:8px auto 6px"></div>
+        <div style="display:flex;align-items:baseline;gap:8px;padding:0 20px;color:#9da2c6;font-size:14px"><span class="scribe" style="font-size:30px;color:var(--gold-hi)">12</span>of 180</div>
+        <div style="margin:10px 16px 0;height:32px;border-radius:9px;background:#1f2446;display:flex;padding:2px;font-size:13px;font-weight:600;color:#eef0fa">
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;border-radius:7px;background:#3a4070">Translation</div><div style="flex:1;display:flex;align-items:center;justify-content:center">Original</div><div style="flex:1;display:flex;align-items:center;justify-content:center">Summary</div></div>
+      </div>
+      <div class="top"><div class="circ gl">‹</div><div class="capsule gl"><b>Famicom Tsūshin</b><span>July 1986</span></div><div class="circ" style="background:var(--leaf);color:#2a1d05">文</div><div class="circ gl">Aa</div></div>
+    </div></div>
+    <div class="cap">Translate the whole page<small>The English set into every box, sized to fit</small></div>
+  </div>
+  <div class="col">
+    <div class="land"><div class="screen" id="spread"></div></div>
+    <div class="cap" style="margin-top:6px">Turn sideways for spreads<small>Facing pages together, the way the magazine was printed</small></div>
+  </div>
+</div>
+<script>
+function page(el, w, h, opts) {
+  const s = w / 340, add = (cls, css, txt) => { const d = document.createElement("div"); d.className = cls; Object.assign(d.style, css); if (txt) d.textContent = txt; el.appendChild(d); return d; };
+  const px = v => v * s + "px";
+  for (let i = 0; i < 6; i++) add("hd", { left: px(16 + i * 52), top: px(16), width: px(44), height: px(44) });
+  add("kick", { left: px(16), top: px(72), width: px(90), height: px(12 / s * s) });
+  add("shot", { left: px(16), top: px(100), width: px(120), height: px(150) });
+  const regions = opts.manga ? [[146, 98, 98, 168, "Two years in the making, and it shows on every screen."], [250, 98, 78, 168, "Mario returns! A first look at the new adventure."],
+                                [16, 272, 120, 186, "Screens are from a work-in-progress version."], [142, 272, 92, 186, "Plus readers' high scores and next issue."], [240, 272, 88, 186, "Out this winter. Price still to be announced."]] : [];
+  for (let c = 0; c < (opts.manga ? 0 : 9); c++) {
+    const x = 314 - c * 20;
+    for (let r = 0; r < 22; r++) {
+      const y = 100 + r * 16;
+      if (x < 140 && y < 256) continue;
+      if (r === 10 || (c * 5 + r * 3) % 13 === 0) continue;
+      add("ch", { left: px(x), top: px(y), width: px(12), height: px(12) });
+    }
+  }
+  if (opts.manga) {
+    add("mg", { left: px(16), top: px(12), width: px(312), height: px(52), fontSize: px(22), fontWeight: 800 }, opts.head);
+    regions.forEach(([l, t, w2, h2, txt]) => add("mg", { left: px(l), top: px(t), width: px(w2), height: px(h2), fontSize: px(11.5) }, txt));
+  }
+}
+page(document.getElementById("p1"), 340, 474, { manga: true, head: "MARIO RETURNS!" });
+const sp = document.getElementById("spread");
+const H = 390, W = Math.round(H * 340 / 474);
+for (let k = 0; k < 2; k++) { const p = document.createElement("div"); p.className = "page"; p.style.width = W + "px"; p.style.height = H + "px"; sp.appendChild(p); page(p, W, H, { manga: false }); }
+const g = document.createElement("div"); g.className = "gutter"; g.style.left = "50%"; g.style.top = "0"; g.style.bottom = "0"; sp.appendChild(g);
+</script>
+</body></html>

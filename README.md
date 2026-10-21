@@ -23,6 +23,10 @@ The name works two ways. It means the glossy page, and it means a *gloss*, the n
 
 <br>
 
+<img src="docs/brand/img/tour.png" alt="Three phone screens. Discover shows magazine covers in a grid under a large title. An issue page shows a cover with a Download button turning into a progress ring at 62 percent. The reader shows a scanned page with one box of Japanese glossed in gold and its English in a dark card beside it." width="100%">
+
+<br>
+
 ## Install
 
 1. On your phone, open **[the latest release](https://github.com/Aymansal1/Gloss/releases/latest)** and tap `Gloss-<version>.apk`.
@@ -34,6 +38,8 @@ Gloss needs Android 13 or newer. It has no accounts, no analytics and no ads.
 <br>
 
 ## Reading
+
+<img src="docs/brand/img/reading.png" alt="Left, a phone in manga mode with English set inside every text box of the scan and the reading sheet peeking from the bottom. Right, a phone turned sideways showing two facing pages as a spread." width="100%">
 
 - **Tap any text on the scan** to gloss it. The box fills with gold leaf, and its English appears in a card beside it, with the Japanese underneath. Tap the card to read the whole page.
 - **Pull up the sheet** to read the page as translation, original or summary, or to slide through page thumbnails.
@@ -54,6 +60,8 @@ Gloss needs Android 13 or newer. It has no accounts, no analytics and no ads.
 ## Search
 
 Search looks inside every issue on your phone, in English or Japanese. An ordinary word index treats a Japanese sentence as one long word, so a term in the middle of it never matches. Gloss indexes Japanese as overlapping character pairs and splits your query into the same pairs, so `マリオ` finds スーパー**マリオ**３.
+
+<img src="docs/brand/img/search.png" alt="Diagram: the query マリオ is split into the pairs マリ and リオ, and both pairs match inside the indexed sentence スーパーマリオ３の攻略, so the page is found." width="100%">
 
 | Query | Finds |
 |---|---|
@@ -102,7 +110,7 @@ Gloss downloads Mega files without Mega's app. It asks Mega's public API for the
 | `…/ui/components/` | The shared kit: glass bars, large titles, the tab bar, cells, switches, covers |
 | `…/ui/` | Screens: Discover, Series, Issue, Library, Search, Settings and the Reader |
 | `app/src/test/` | Unit tests for the parsers, search, spreads, backups, update checks and Mega decryption |
-| `docs/brand/` | `build.py` draws the icon, wordmark and this banner from the bundled fonts; `video/` holds the promo and its [HyperFrames](https://hyperframes.heygen.com) source |
+| `docs/brand/` | `build.py` draws the icon, wordmark and this banner from the bundled fonts; `illustrations/` holds the HTML behind the README pictures (`render.cjs` turns them into `img/`); `video/` holds the promo, its [HyperFrames](https://hyperframes.heygen.com) source and `score.py`, which synthesizes its music |
 
 </details>
 
@@ -121,7 +129,7 @@ To build locally you need JDK 17 and the Android SDK:
 
 Release builds are signed with a key that is not in this repo. CI reads it from four repository secrets: `GLOSS_KEYSTORE_BASE64`, `GLOSS_KEYSTORE_PASSWORD`, `GLOSS_KEY_ALIAS` and `GLOSS_KEY_PASSWORD`. Without them, for example on a fork, the release build is signed with the debug key and nothing is published.
 
-To redraw the icon, wordmark and banner after changing them, run `python3 docs/brand/build.py` from the repo root (it needs `fonttools`).
+To redraw the icon, wordmark and banner after changing them, run `python3 docs/brand/build.py` from the repo root (it needs `fonttools`). To redraw the README pictures, run `NODE_PATH=$(npm root -g) node docs/brand/illustrations/render.cjs` (it needs Playwright).
 
 <br>
 

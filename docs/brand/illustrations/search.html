@@ -1,0 +1,26 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="phone.css">
+<style>
+.stage { width: 1600px; height: 660px; flex-direction: column; align-items: center; justify-content: center; gap: 0; padding: 0; color: #fff; }
+.grid { display: grid; grid-template-columns: 240px auto; column-gap: 28px; align-items: center; margin-left: -268px; }
+.grid > div:nth-child(even) { justify-self: start; }
+.q { font-family: "JP"; font-size: 64px; letter-spacing: .04em; padding: 14px 30px; border-radius: 20px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); }
+.lab { font-size: 18px; font-weight: 600; color: rgba(255,255,255,.55); letter-spacing: .06em; text-transform: uppercase; text-align: right; white-space: nowrap; }
+.pairs { display: flex; gap: 18px; }
+.pair { font-family: "JP"; font-size: 46px; padding: 10px 22px; border-radius: 16px; background: rgba(35,56,194,.55); border: 1px solid rgba(80,104,255,.7); }
+.arrow { width: 2px; height: 40px; margin: 10px 0 10px 60px; background: linear-gradient(rgba(246,216,134,.0), var(--gold-hi)); }
+.sent { font-family: "JP"; font-size: 52px; letter-spacing: .02em; padding: 16px 30px; border-radius: 20px; background: #f7f2e6; color: #2b2620; }
+.sent mark { background: rgba(227,179,65,.45); color: #14161f; border-radius: 6px; padding: 0 2px; box-shadow: inset 0 -5px 0 0 var(--gold); }
+.note { margin-top: 30px; font-size: 21px; color: rgba(255,255,255,.66); text-align: center; max-width: 980px; line-height: 1.45; }
+.note b { color: #fff; font-weight: 600; }
+</style></head><body>
+<div class="stage" id="stage">
+  <div class="grid">
+    <div class="lab">You search</div><div><div class="q">マリオ</div></div>
+    <div></div><div class="arrow"></div>
+    <div class="lab">Gloss looks for</div><div class="pairs"><div class="pair">マリ</div><div class="pair">リオ</div></div>
+    <div></div><div class="arrow"></div>
+    <div class="lab">and finds</div><div><div class="sent">スーパー<mark>マリオ</mark>３の攻略</div></div>
+  </div>
+  <div class="note">A plain word index sees that sentence as one long word, so <b>マリオ</b> in the middle of it would never match. Gloss indexes Japanese as overlapping character pairs, so it does.</div>
+</div>
+</body></html>

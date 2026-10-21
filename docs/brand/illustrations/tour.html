@@ -1,0 +1,164 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="phone.css">
+<style>
+.stage { width: 1600px; height: 1050px; gap: 70px; padding-top: 70px; }
+.col { display: flex; flex-direction: column; align-items: center; gap: 34px; }
+.col:nth-child(2) { margin-top: 60px; }
+.cap { color: #fff; text-align: center; font-size: 26px; font-weight: 650; letter-spacing: -.02em; }
+.cap small { display: block; margin-top: 6px; font-size: 17px; font-weight: 450; color: rgba(255,255,255,.62); letter-spacing: 0; }
+
+/* Discover */
+.disc { padding: 52px 18px 0; }
+.lt { display: flex; align-items: center; justify-content: space-between; }
+.wm { font-family: "Scribe"; font-style: italic; font-size: 46px; line-height: 1; color: var(--text); position: relative; }
+.wm i { position: absolute; left: 34px; right: 2px; bottom: -1px; height: 4px; background: var(--leaf); transform: skewX(-12deg); border-radius: 1px; }
+.icons { display: flex; gap: 8px; } .icons b { width: 34px; height: 34px; border-radius: 50%; background: var(--fill); display: block; }
+.search { margin-top: 14px; height: 38px; border-radius: 11px; background: var(--fill); color: var(--ter); font-size: 16px; display: flex; align-items: center; padding-left: 34px; position: relative; }
+.search:before { content: ""; position: absolute; left: 12px; top: 12px; width: 11px; height: 11px; border: 2px solid var(--ter); border-radius: 50%; }
+.cont { margin-top: 16px; border-radius: 20px; background: linear-gradient(135deg, #3149dd, var(--lapis) 50%, var(--deep)); padding: 16px; display: flex; gap: 14px; color: #fff; }
+.thumb { width: 74px; height: 100px; border-radius: 5px; background: #f7f2e6; flex: none; position: relative; overflow: hidden; }
+.thumb:before { content: ""; position: absolute; inset: 10px 8px auto; height: 14px; background: #2b2620; opacity: .8; border-radius: 2px; }
+.thumb:after { content: ""; position: absolute; left: 8px; right: 8px; top: 32px; bottom: 10px; background: repeating-linear-gradient(90deg, rgba(43,38,32,.55) 0 5px, transparent 5px 9px); }
+.cont .k { font-size: 12px; font-weight: 650; letter-spacing: .04em; color: var(--gold-hi); }
+.cont .t { font-size: 18px; font-weight: 700; margin-top: 4px; }
+.cont .p { font-size: 20px; margin-top: 8px; color: rgba(255,255,255,.85); }
+.cont .bar { margin-top: 10px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.2); }
+.cont .bar i { display: block; width: 38%; height: 100%; border-radius: 2px; background: var(--leaf); }
+.shelf { margin-top: 22px; } .shelf h4 { font-size: 20px; font-weight: 700; color: var(--text); letter-spacing: -.01em; }
+.covers { display: flex; gap: 12px; margin-top: 10px; }
+.cv { width: 92px; height: 126px; border-radius: 6px; flex: none; position: relative; overflow: hidden; color: #fff; padding: 9px; box-shadow: 0 6px 14px rgba(11,13,28,.18); }
+.cv b { font-size: 11px; font-weight: 800; letter-spacing: .03em; }
+.cv em { position: absolute; left: 9px; bottom: 8px; font-family: "Scribe"; font-size: 22px; }
+.cv i { position: absolute; left: 9px; right: 30px; bottom: 34px; height: 2px; background: var(--leaf); }
+.cv u { position: absolute; right: 7px; top: 7px; width: 16px; height: 16px; border-radius: 50%; background: rgba(255,255,255,.9); }
+.cap2 { font-size: 12px; color: var(--sec); margin-top: 6px; }
+.tabs { position: absolute; left: 18px; right: 74px; bottom: 26px; height: 58px; border-radius: 29px; background: rgba(255,255,255,.82); box-shadow: 0 8px 26px rgba(11,13,28,.16), inset 0 0 0 .6px rgba(255,255,255,.9); display: flex; padding: 5px; }
+.tabs div { flex: 1; border-radius: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--sec); gap: 3px; }
+.tabs div:before { content: ""; width: 20px; height: 18px; border-radius: 5px; background: currentColor; opacity: .85; }
+.tabs .on { background: rgba(35,56,194,.12); color: var(--lapis); }
+.sbtn { position: absolute; right: 18px; bottom: 26px; width: 50px; height: 58px; border-radius: 29px; background: rgba(255,255,255,.82); box-shadow: 0 8px 26px rgba(11,13,28,.16); }
+.sbtn:before { content: ""; position: absolute; left: 15px; top: 19px; width: 14px; height: 14px; border: 2.5px solid var(--text); border-radius: 50%; }
+
+/* Issue */
+.iss { background: var(--ground); }
+.wash { position: absolute; left: 0; right: 0; top: 0; height: 380px; background: linear-gradient(180deg, #2a8a62 0%, rgba(30,143,94,.55) 45%, rgba(242,243,248,0) 100%); }
+.back { position: absolute; top: 48px; left: 14px; color: #fff; font-size: 17px; font-weight: 500; z-index: 3; }
+.back:before { content: "‹"; font-size: 30px; line-height: 0; position: relative; top: 3px; margin-right: 4px; }
+.big { position: absolute; left: 50%; top: 92px; margin-left: -88px; width: 176px; height: 240px; border-radius: 6px; background: linear-gradient(160deg, #2fae78, #1e8f5e 50%, #0f5a3a); box-shadow: 0 24px 40px rgba(11,13,28,.35); color: #fff; padding: 14px; }
+.big b { font-size: 20px; font-weight: 900; letter-spacing: .02em; }
+.big em { position: absolute; left: 14px; bottom: 12px; font-family: "Scribe"; font-size: 40px; line-height: 1; }
+.big i { position: absolute; left: 14px; width: 70px; bottom: 60px; height: 3px; background: var(--leaf); }
+.big s { position: absolute; left: 14px; right: 14px; top: 52px; height: 90px; border-radius: 3px; background: rgba(255,255,255,.16); }
+.ititle { position: absolute; top: 356px; left: 0; right: 0; text-align: center; }
+.ititle h2 { font-size: 24px; font-weight: 750; letter-spacing: -.02em; color: var(--text); }
+.ititle p { font-size: 14px; color: var(--sec); margin-top: 4px; }
+.btns { position: absolute; top: 430px; left: 0; right: 0; display: flex; justify-content: center; align-items: center; gap: 14px; }
+.ring { width: 54px; height: 54px; border-radius: 50%; background: conic-gradient(var(--lapis) 0 62%, var(--fill) 62% 100%); display: flex; align-items: center; justify-content: center; }
+.ring:after { content: ""; width: 46px; height: 46px; border-radius: 50%; background: var(--ground) content-box; padding: 0; box-shadow: none; }
+.ring { position: relative; } .ring:before { content: ""; position: absolute; left: 21px; top: 21px; width: 12px; height: 12px; border-radius: 3px; background: var(--lapis); z-index: 1; }
+.pct { font-size: 15px; font-weight: 600; color: var(--sec); }
+.pill { height: 38px; padding: 0 18px; border-radius: 19px; background: #E4E7F9; color: var(--lapis); font-size: 15px; font-weight: 600; display: flex; align-items: center; }
+.facts { position: absolute; top: 506px; left: 16px; right: 16px; background: #fff; border-radius: 12px; }
+.facts div { display: flex; justify-content: space-between; padding: 12px 16px; font-size: 15px; color: var(--text); border-bottom: .6px solid var(--sep); }
+.facts div:last-child { border: 0; } .facts span { color: var(--sec); }
+.ai { position: absolute; top: 668px; left: 28px; right: 28px; font-size: 12px; line-height: 1.4; color: var(--sec); }
+
+/* Reader */
+.rd { background: #000; }
+.scan { position: absolute; left: 0; right: 0; top: 70px; height: 470px; background: #f7f2e6; }
+.hd { position: absolute; top: 16px; width: 40px; height: 40px; border-radius: 4px; background: #2b2620; opacity: .85; }
+.colj { position: absolute; width: 12px; display: flex; flex-direction: column; gap: 4px; }
+.colj i { width: 12px; height: 12px; border-radius: 2px; background: #2b2620; opacity: .8; display: block; }
+.gwash { position: absolute; left: 230px; top: 92px; width: 92px; height: 170px; border-radius: 5px; background: rgba(227,179,65,.34); }
+.gleaf { position: absolute; left: 230px; top: 268px; width: 92px; height: 4px; border-radius: 2px; background: var(--leaf); }
+.note { position: absolute; left: 30px; top: 288px; width: 300px; background: rgba(20,24,50,.97); border: 1px solid rgba(227,179,65,.5); border-radius: 18px; padding: 16px 18px 14px; color: #fff; box-shadow: 0 20px 40px rgba(0,0,0,.5); }
+.note p { font-size: 15.5px; line-height: 1.38; } .note .jp { font-family: "JP"; color: rgba(255,255,255,.55); font-size: 12px; margin-top: 8px; }
+.note .more { margin-top: 10px; display: flex; align-items: center; gap: 8px; color: var(--gold-hi); font-size: 12.5px; font-weight: 600; }
+.note .more:before { content: ""; width: 18px; height: 2px; border-radius: 1px; background: var(--leaf); }
+.top { position: absolute; top: 46px; left: 10px; right: 10px; display: flex; gap: 6px; align-items: center; z-index: 3; }
+.gl { background: rgba(24,28,55,.72); border: .6px solid rgba(255,255,255,.12); backdrop-filter: blur(12px); color: #eef0fa; }
+.circ { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; flex: none; }
+.capsule { flex: 1; height: 40px; border-radius: 20px; text-align: center; padding-top: 4px; }
+.capsule b { display: block; font-size: 13px; font-weight: 600; } .capsule span { font-size: 10.5px; color: #9da2c6; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; height: 200px; border-radius: 22px 22px 0 0; background: rgba(24,28,55,.94); border-top: .6px solid rgba(255,255,255,.12); }
+.grab { width: 36px; height: 5px; border-radius: 3px; background: #6a6f96; margin: 8px auto 6px; }
+.pb { display: flex; align-items: baseline; gap: 8px; padding: 0 20px; color: #9da2c6; font-size: 14px; }
+.pb .scribe { font-size: 30px; color: var(--gold-hi); }
+.pb .bm { margin-left: auto; width: 16px; height: 20px; background: var(--verm); clip-path: polygon(0 0,100% 0,100% 100%,50% 75%,0 100%); align-self: center; }
+.scrub { display: flex; gap: 6px; padding: 10px 16px 0; align-items: flex-end; }
+.scrub i { width: 32px; height: 44px; border-radius: 3px; background: #f7f2e6; opacity: .55; margin-top: 6px; display: block; flex: none; }
+.scrub i.on { opacity: 1; margin-top: 0; outline: 1.5px solid var(--gold); }
+.seg { margin: 12px 16px 0; height: 32px; border-radius: 9px; background: #1f2446; display: flex; padding: 2px; font-size: 13px; font-weight: 600; color: #eef0fa; }
+.seg div { flex: 1; display: flex; align-items: center; justify-content: center; border-radius: 7px; }
+.seg .on { background: #3a4070; }
+</style></head><body>
+<div class="stage" id="stage">
+  <div class="col">
+    <div class="phone"><div class="screen">
+      <div class="status"><span>9:41</span><span>●●● ▮</span></div><div class="punch"></div>
+      <div class="disc">
+        <div class="lt"><div class="wm">gloss<i></i></div><div class="icons"><b></b><b></b></div></div>
+        <div class="search">Find a magazine</div>
+        <div class="cont"><div class="thumb"></div><div style="flex:1">
+          <div class="k">CONTINUE READING</div><div class="t">Famicom Tsūshin</div>
+          <div class="p"><span class="scribe">p. 68</span> <span style="font-size:13px;opacity:.75">of 180</span></div>
+          <div class="bar"><i></i></div></div></div>
+        <div class="shelf"><h4>Famicom Tsūshin ›</h4><div class="covers">
+          <div><div class="cv" style="background:linear-gradient(160deg,#3a50e0,#2338C2 55%,#141E78)"><b>FAMITSU</b><i></i><em>1986</em><u></u></div><div class="cap2">Jul 1986</div></div>
+          <div><div class="cv" style="background:linear-gradient(160deg,#3a50e0,#2338C2 55%,#141E78)"><b>FAMITSU</b><i></i><em>1987</em></div><div class="cap2">Feb 1987</div></div>
+          <div><div class="cv" style="background:linear-gradient(160deg,#3a50e0,#2338C2 55%,#141E78)"><b>FAMITSU</b><i></i><em>1988</em></div><div class="cap2">Nov 1988</div></div>
+        </div></div>
+        <div class="shelf"><h4>BEEP! ›</h4><div class="covers">
+          <div class="cv" style="background:linear-gradient(160deg,#e9845a,#E0662D 55%,#9c3d12)"><b>BEEP!</b><i></i><em>1987</em></div>
+          <div class="cv" style="background:linear-gradient(160deg,#e9845a,#E0662D 55%,#9c3d12)"><b>BEEP!</b><i></i><em>1988</em></div>
+          <div class="cv" style="background:linear-gradient(160deg,#e9845a,#E0662D 55%,#9c3d12)"><b>BEEP!</b><i></i><em>1989</em></div>
+        </div></div>
+      </div>
+      <div class="tabs"><div class="on">Discover</div><div>Library</div></div><div class="sbtn"></div>
+    </div></div>
+    <div class="cap">Discover<small>Pick up where you left off</small></div>
+  </div>
+
+  <div class="col">
+    <div class="phone"><div class="screen iss">
+      <div class="status" style="color:#fff"><span>9:41</span><span>●●● ▮</span></div><div class="punch"></div>
+      <div class="wash"></div><div class="back">Discover</div>
+      <div class="big"><b>LOGiN</b><s></s><i></i><em>1991</em></div>
+      <div class="ititle"><h2>LOGiN</h2><p>June 1991 · 212 pages</p></div>
+      <div class="btns"><div class="ring"></div><div class="pct">62%</div><div class="pill">Text only</div></div>
+      <div class="facts"><div>Publisher<span>ASCII</span></div><div>Translated<span>Every page</span></div><div>Scan<span>archive.org · 184 MB</span></div></div>
+      <div class="ai">Transcriptions and translations are AI-generated and can be wrong. Check anything that matters against the scan.</div>
+    </div></div>
+    <div class="cap">Get an issue<small>The button becomes the download</small></div>
+  </div>
+
+  <div class="col">
+    <div class="phone"><div class="screen rd">
+      <div class="status" style="color:#fff"><span>9:41</span><span>●●● ▮</span></div><div class="punch"></div>
+      <div class="scan" id="scan"><div class="gwash"></div><div class="gleaf"></div></div>
+      <div class="top"><div class="circ gl">‹</div><div class="capsule gl"><b>Famicom Tsūshin</b><span>July 1986</span></div><div class="circ" style="background:var(--leaf);color:#2a1d05">文</div><div class="circ gl">Aa</div></div>
+      <div class="note"><p>Mario returns! A first look at the new adventure, with eight brand-new worlds.</p><p class="jp">マリオが帰ってきた！新しい冒険をひと足先に</p><div class="more">Whole page</div></div>
+      <div class="sheet"><div class="grab"></div>
+        <div class="pb"><span class="scribe">68</span>of 180<span class="bm"></span></div>
+        <div class="scrub"><i></i><i></i><i></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
+        <div class="seg"><div class="on">Translation</div><div>Original</div><div>Summary</div></div>
+      </div>
+    </div></div>
+    <div class="cap">Tap to gloss<small>The English, right beside the Japanese</small></div>
+  </div>
+</div>
+<script>
+  // Columns of "characters" on the scan, leaving room for the glossed box.
+  const scan = document.getElementById("scan");
+  for (let i = 0; i < 7; i++) { const h = document.createElement("div"); h.className = "hd"; h.style.left = 16 + i * 48 + "px"; scan.appendChild(h); }
+  for (let c = 0; c < 16; c++) {
+    const x = 318 - c * 20; const col = document.createElement("div"); col.className = "colj";
+    col.style.left = x + "px"; col.style.top = "96px";
+    const n = 28 - ((c * 7) % 6);
+    for (let r = 0; r < n; r++) { const ch = document.createElement("i"); if ((c * 5 + r * 3) % 13 === 0 || (x >= 226 && x <= 322 && r < 11) || r === 12) ch.style.visibility = "hidden"; col.appendChild(ch); }
+    scan.appendChild(col);
+  }
+  // Glossed box gets its own characters.
+  for (let c = 0; c < 4; c++) { const col = document.createElement("div"); col.className = "colj"; col.style.left = 300 - c * 20 + "px"; col.style.top = "100px";
+    for (let r = 0; r < 9 - c; r++) col.appendChild(document.createElement("i")); scan.appendChild(col); }
+</script>
+</body></html>

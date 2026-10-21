@@ -1,0 +1,21 @@
+/* Shared look for the README illustrations. Colours match ui/theme/Gloss.kt. */
+@font-face { font-family: "Inter"; src: url("../../../app/src/main/res/font/inter_variable.ttf"); font-weight: 100 900; }
+@font-face { font-family: "Scribe"; src: url("../../../app/src/main/res/font/instrument_serif_italic.ttf"); font-style: italic; }
+@font-face { font-family: "JP"; src: url("/usr/share/fonts/opentype/ipafont-gothic/ipagp.ttf"); }
+:root {
+  --lapis: #2338C2; --lapis-n: #5068FF; --deep: #141E78; --night: #070A1C;
+  --gold-hi: #F6D886; --gold: #E3B341; --gold-lo: #B98320; --verm: #D5412A;
+  --ground: #F2F3F8; --fill: #E8EAF2; --sep: #D5D8E4; --text: #0B0D1C; --sec: #5B5F7E; --ter: #8D91AB;
+  --leaf: linear-gradient(90deg, var(--gold-hi), var(--gold) 55%, var(--gold-lo));
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: "Inter", "JP", sans-serif; -webkit-font-smoothing: antialiased; }
+.stage { position: relative; overflow: hidden; background: radial-gradient(ellipse 90% 100% at 50% 30%, #18227f 0%, #0b1036 55%, var(--night) 100%); display: flex; align-items: flex-start; justify-content: center; }
+.phone { position: relative; width: 360px; height: 760px; border-radius: 52px; background: #05060f; padding: 10px; box-shadow: 0 50px 100px rgba(0,0,0,.55), inset 0 0 0 1.5px rgba(255,255,255,.12); flex: none; }
+.screen { position: relative; width: 100%; height: 100%; border-radius: 43px; overflow: hidden; background: var(--ground); }
+.status { position: absolute; top: 0; left: 0; right: 0; height: 40px; display: flex; justify-content: space-between; align-items: center; padding: 0 28px; font-size: 14px; font-weight: 600; z-index: 5; }
+.punch { position: absolute; top: 12px; left: 50%; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: #000; z-index: 6; }
+.label { position: absolute; color: #fff; text-align: center; font-size: 26px; font-weight: 650; letter-spacing: -.02em; }
+.label small { display: block; margin-top: 6px; font-size: 17px; font-weight: 450; color: rgba(255,255,255,.62); letter-spacing: 0; }
+.scribe { font-family: "Scribe", serif; font-style: italic; font-weight: 400; }
+.leafbar { height: 4px; border-radius: 2px; background: var(--leaf); }
