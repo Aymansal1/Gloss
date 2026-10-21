@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Mega serves file bodies from its storage nodes; the content is AES-encrypted
+         and MAC-verified by the app, so plain HTTP there is acceptable. Everything
+         else stays HTTPS-only. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">userstorage.mega.co.nz</domain>
+        <domain includeSubdomains="true">mega.co.nz</domain>
+    </domain-config>
+</network-security-config>

@@ -1,0 +1,7 @@
+* text=auto eol=lf
+*.bat text eol=crlf
+*.ttf binary
+*.keystore binary
+*.bin binary
+*.jar binary
+docs/art/*.svg linguist-generated=true
