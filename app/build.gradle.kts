@@ -57,6 +57,13 @@ android {
     }
     testOptions {
         unitTests.isReturnDefaultValues = true
+        // Screenshot tests render real Compose UI on the JVM with Robolectric; Roborazzi
+        // writes the images to app/build/outputs/roborazzi.
+        unitTests.isIncludeAndroidResources = true
+        unitTests.all {
+            it.systemProperty("roborazzi.test.record", "true")
+            it.maxHeapSize = "3g"
+        }
     }
 }
 
@@ -84,4 +91,12 @@ dependencies {
     testImplementation(libs.junit)
     // Real org.json for JVM unit tests (Android's stub returns defaults).
     testImplementation(libs.json)
+    testImplementation(platform(libs.compose.bom))
+    testImplementation(libs.compose.ui.test.junit4)
+    testImplementation(libs.androidx.test.junit)
+    testImplementation(libs.work.testing)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
+    debugImplementation(libs.compose.ui.test.manifest)
 }

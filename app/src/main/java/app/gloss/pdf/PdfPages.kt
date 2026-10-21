@@ -109,6 +109,17 @@ class PdfPages(context: Context) {
         }
     }
 
+    /**
+     * Screenshot tests run without Android's PDF engine, so they hand in page shapes and
+     * images directly; every later read for that page is then served from the cache.
+     */
+    internal fun primeForTests(file: File, pages: List<Bitmap>) {
+        aspects[file.path] = FloatArray(pages.size) { pages[it].width.toFloat() / pages[it].height }
+        pages.forEachIndexed { i, bmp ->
+            listOf(160, 480, 1080, 1440, 2160, 2880).forEach { w -> cache.put(key(file, i, w), bmp) }
+        }
+    }
+
     fun cached(file: File, pageIndex: Int, widthPx: Int): Bitmap? = cache.get(key(file, pageIndex, bucket(widthPx)))
 
     /** Renders page [pageIndex] (0-based) at [widthPx] wide. Width is bucketed to reuse cache entries. */

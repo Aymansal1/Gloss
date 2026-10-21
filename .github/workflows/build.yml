@@ -61,6 +61,32 @@ jobs:
           print(f"::{level} title=Unit tests::{t} run, {f} failed, {e} errors, {s} skipped")
           PY
 
+      # Screenshot tests write PNGs of the real screens. Each push publishes them to the
+      # `screenshots` branch (one commit, replaced each time) so they can be looked at
+      # without downloading artifacts.
+      - name: Publish screenshots
+        if: always() && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          src="$GITHUB_WORKSPACE/app/build/outputs/roborazzi"
+          ls "$src"/*.png >/dev/null 2>&1 || { echo "No screenshots"; exit 0; }
+          dir="$RUNNER_TEMP/shots" && rm -rf "$dir" && mkdir -p "$dir/${GITHUB_REF_NAME}"
+          cp "$src"/*.png "$dir/${GITHUB_REF_NAME}/"
+          cd "$dir"
+          git init -q -b screenshots
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Keep the other branch's folder from the last publish.
+          if git fetch -q --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" screenshots 2>/dev/null; then
+            for d in $(git ls-tree --name-only FETCH_HEAD); do
+              [ "$d" != "$GITHUB_REF_NAME" ] && git checkout FETCH_HEAD -- "$d" 2>/dev/null || true
+            done
+          fi
+          git add -A
+          git commit -qm "Screenshots from ${GITHUB_REF_NAME} at ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" screenshots
+
       # Signing key comes from repository secrets; forks and PRs build with the debug key.
       - name: Restore signing key
         env:
