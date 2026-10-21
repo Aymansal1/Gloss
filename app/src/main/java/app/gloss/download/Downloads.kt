@@ -26,6 +26,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
 
 enum class DownloadMode {
@@ -75,34 +76,38 @@ class SourceFetcher(private val http: OkHttpClient) {
 
     private fun plain(url: String, dest: File, onProgress: (Long, Long) -> Unit, isCancelled: () -> Boolean) {
         require(url.startsWith("https://") || url.startsWith("http://")) { "Unsupported URL scheme" }
-        val tmp = File(dest.parentFile, dest.name + ".part")
-        dest.parentFile?.mkdirs()
-        try {
-            http.newCall(Request.Builder().url(url).build()).execute().use { resp ->
-                if (!resp.isSuccessful) throw IOException("HTTP ${resp.code}")
-                val body = resp.body ?: throw IOException("Empty response")
-                val total = body.contentLength()
-                body.byteStream().use { input ->
-                    tmp.outputStream().buffered(1 shl 16).use { out ->
-                        val buf = ByteArray(1 shl 16)
-                        var done = 0L
-                        while (true) {
-                            if (isCancelled()) throw IOException("Download cancelled")
-                            val n = input.read(buf)
-                            if (n < 0) break
-                            out.write(buf, 0, n)
-                            done += n
-                            onProgress(done, total)
-                        }
-                        if (total > 0 && done != total) throw IOException("Download truncated ($done of $total bytes)")
+        val part = PartialFile(dest, url)
+        val have = part.resumable()
+        val req = Request.Builder().url(url).apply { if (have > 0) header("Range", "bytes=$have-") }.build()
+        http.newCall(req).execute().use { resp ->
+            // The server forgot the range (file changed, or past the end): start this source over.
+            if (resp.code == 416) { part.discard(); return plain(url, dest, onProgress, isCancelled) }
+            if (!resp.isSuccessful) throw IOException("HTTP ${resp.code}")
+            val body = resp.body ?: throw IOException("Empty response")
+            // Only trust a 206 that starts exactly where our bytes end; anything else restarts.
+            val resumed = have > 0 && resp.code == 206 &&
+                resp.header("Content-Range")?.startsWith("bytes $have-") == true
+            if (!resumed) part.begin()
+            val start = if (resumed) have else 0L
+            val total = body.contentLength().let { if (it >= 0) it + start else -1L }
+            body.byteStream().use { input ->
+                FileOutputStream(part.file, resumed).buffered(1 shl 16).use { out ->
+                    val buf = ByteArray(1 shl 16)
+                    var done = start
+                    onProgress(done, total)
+                    while (true) {
+                        if (isCancelled()) throw IOException("Download cancelled")
+                        val n = input.read(buf)
+                        if (n < 0) break
+                        out.write(buf, 0, n)
+                        done += n
+                        onProgress(done, total)
                     }
+                    if (total > 0 && done != total) throw IOException("Download cut off at $done of $total bytes; it will resume")
                 }
             }
-            if (dest.exists()) dest.delete()
-            if (!tmp.renameTo(dest)) throw IOException("Could not move file into place")
-        } finally {
-            if (tmp.exists()) tmp.delete()
         }
+        part.commit(dest)
     }
 
     private fun redact(url: String) = url.substringBefore('#')

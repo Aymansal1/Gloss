@@ -7,6 +7,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
 import java.security.MessageDigest
 
 /**
@@ -49,5 +51,26 @@ class MegaTest {
             MegaDownloader.decryptStream(body.inputStream(), ByteArrayOutputStream(), v.getLong("size"), nk)
         }.isFailure
         assertTrue("tampered data must fail the MAC check", failed)
+    }
+
+    @Test fun resumesFromTheLastWholeChunk() {
+        val v = JSONObject(res("mega_vector.json").bufferedReader().readText())
+        val nk = MegaDownloader.decodeNodeKey(v.getString("key"))
+        val size = v.getLong("size")
+        val body = res("mega_body.bin").readBytes()
+        val full = ByteArrayOutputStream().also { MegaDownloader.decryptStream(body.inputStream(), it, size, nk) }.toByteArray()
+
+        // A download that died partway through the second chunk.
+        val part = File.createTempFile("mega", ".part").apply { deleteOnExit(); writeBytes(full.copyOf(200_000)) }
+        val (start, mac) = MegaDownloader.resumePoint(part, size, nk)
+        assertEquals(0x20000L, start)
+        assertEquals(0x20000L, part.length())
+
+        FileOutputStream(part, true).use { out ->
+            val rest = body.copyOfRange(start.toInt(), body.size).inputStream()
+            MegaDownloader.decryptStream(rest, out, size, nk, start = start, mac = mac)
+        }
+        val sha = MessageDigest.getInstance("SHA-256").digest(part.readBytes()).joinToString("") { "%02x".format(it) }
+        assertEquals(v.getString("sha256"), sha)
     }
 }

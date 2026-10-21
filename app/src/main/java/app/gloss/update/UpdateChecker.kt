@@ -87,5 +87,16 @@ class UpdateChecker(
             if (cur.isBlank() || rem.isBlank()) return false
             return compareVersions(rem, cur) > 0
         }
+
+        /** Compares dotted versions part by part as numbers ("1.0.10" > "1.0.9"); missing parts count as 0. */
+        fun compareVersions(a: String, b: String): Int {
+            val x = a.split('.').map { it.toIntOrNull() ?: 0 }
+            val y = b.split('.').map { it.toIntOrNull() ?: 0 }
+            for (i in 0 until maxOf(x.size, y.size)) {
+                val d = x.getOrElse(i) { 0 }.compareTo(y.getOrElse(i) { 0 })
+                if (d != 0) return d
+            }
+            return 0
+        }
     }
 }

@@ -7,9 +7,11 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.io.RandomAccessFile
 import java.net.URI
 import java.nio.ByteBuffer
 import java.util.Base64
@@ -102,8 +104,38 @@ class MegaDownloader(private val http: OkHttpClient) {
         }
 
         /**
+         * Mega's file MAC: each chunk's plaintext is CBC-MAC'd, and those chunk MACs are chained
+         * through one more CBC pass. [initial] resumes the chain from a saved state.
+         */
+        internal class ChunkMac(nk: NodeKey, initial: ByteArray = ByteArray(16)) {
+            private val keySpec = SecretKeySpec(nk.key, "AES")
+            private val chunkIv = IvParameterSpec(toBytes(nk.iv[0], nk.iv[1], nk.iv[0], nk.iv[1]))
+            private val chunkCipher = Cipher.getInstance("AES/CBC/NoPadding")
+            private val chain = Cipher.getInstance("AES/CBC/NoPadding").apply {
+                init(Cipher.ENCRYPT_MODE, keySpec, IvParameterSpec(initial))
+            }
+            var value: ByteArray = initial.copyOf()
+                private set
+
+            fun add(plain: ByteArray) {
+                if (plain.isEmpty()) return
+                val padded = if (plain.size % 16 == 0) plain else plain.copyOf(plain.size + (16 - plain.size % 16))
+                chunkCipher.init(Cipher.ENCRYPT_MODE, keySpec, chunkIv)
+                val enc = chunkCipher.doFinal(padded)
+                value = chain.update(enc.copyOfRange(enc.size - 16, enc.size))
+            }
+
+            fun matches(metaMac: IntArray): Boolean {
+                val fm = toInts(value)
+                return (fm[0] xor fm[1]) == metaMac[0] && (fm[2] xor fm[3]) == metaMac[1]
+            }
+        }
+
+        /**
          * Decrypts a Mega file body of [size] bytes from [input] into [output] and verifies
-         * the file MAC. Throws [MegaException] on truncation, cancellation or MAC mismatch.
+         * the file MAC. To resume, [start] is a chunk boundary already on disk, [input] begins
+         * at that offset, and [mac] is the chain state over the chunks before it.
+         * Throws [MegaException] on truncation, cancellation or MAC mismatch.
          */
         internal fun decryptStream(
             input: InputStream,
@@ -112,20 +144,20 @@ class MegaDownloader(private val http: OkHttpClient) {
             nk: NodeKey,
             onProgress: (Long, Long) -> Unit = { _, _ -> },
             isCancelled: () -> Boolean = { false },
+            start: Long = 0,
+            mac: ByteArray = ByteArray(16),
         ) {
             val keySpec = SecretKeySpec(nk.key, "AES")
+            // CTR counts 16-byte blocks, so a resume starts the counter at start / 16.
+            val block = start / 16
             val ctr = Cipher.getInstance("AES/CTR/NoPadding").apply {
-                init(Cipher.DECRYPT_MODE, keySpec, IvParameterSpec(toBytes(nk.iv[0], nk.iv[1], 0, 0)))
+                init(Cipher.DECRYPT_MODE, keySpec, IvParameterSpec(toBytes(nk.iv[0], nk.iv[1], (block ushr 32).toInt(), block.toInt())))
             }
-            val macAcc = Cipher.getInstance("AES/CBC/NoPadding").apply {
-                init(Cipher.ENCRYPT_MODE, keySpec, IvParameterSpec(ByteArray(16)))
-            }
-            val chunkIv = IvParameterSpec(toBytes(nk.iv[0], nk.iv[1], nk.iv[0], nk.iv[1]))
-            val chunkMacCipher = Cipher.getInstance("AES/CBC/NoPadding")
-            var mac = ByteArray(16)
-            var done = 0L
+            val chain = ChunkMac(nk, mac)
+            var done = start
             val readBuf = ByteArray(1 shl 16)
-            for ((_, chunkSize) in chunks(size)) {
+            for ((pos, chunkSize) in chunks(size)) {
+                if (pos < start) continue
                 val raw = ByteArray(chunkSize.toInt())
                 var filled = 0
                 while (filled < raw.size) {
@@ -138,25 +170,45 @@ class MegaDownloader(private val http: OkHttpClient) {
                     onProgress(done, size)
                 }
                 val plain = ctr.update(raw) ?: ByteArray(0)
-                if (plain.isNotEmpty()) {
-                    val padded = if (plain.size % 16 == 0) plain else plain.copyOf(plain.size + (16 - plain.size % 16))
-                    chunkMacCipher.init(Cipher.ENCRYPT_MODE, keySpec, chunkIv)
-                    val enc = chunkMacCipher.doFinal(padded)
-                    mac = macAcc.update(enc.copyOfRange(enc.size - 16, enc.size))
-                }
+                chain.add(plain)
                 output.write(plain)
             }
-            val fm = toInts(mac)
-            if ((fm[0] xor fm[1]) != nk.metaMac[0] || (fm[2] xor fm[3]) != nk.metaMac[1]) {
-                throw MegaException("Mega download failed integrity check")
+            if (!chain.matches(nk.metaMac)) throw MegaException("Mega download failed integrity check")
+        }
+
+        /**
+         * Where to pick up a half-finished download: the end of the last whole chunk in [part]
+         * (decrypted plaintext), with the MAC chain recomputed over it. Trims [part] to that point.
+         */
+        internal fun resumePoint(part: File, size: Long, nk: NodeKey): Pair<Long, ByteArray> {
+            val have = minOf(part.length(), size)
+            val chain = ChunkMac(nk)
+            var boundary = 0L
+            part.inputStream().buffered(1 shl 16).use { input ->
+                for ((pos, len) in chunks(size)) {
+                    if (pos + len > have) break
+                    val buf = ByteArray(len.toInt())
+                    var filled = 0
+                    while (filled < buf.size) {
+                        val n = input.read(buf, filled, buf.size - filled)
+                        if (n < 0) break
+                        filled += n
+                    }
+                    if (filled < buf.size) break
+                    chain.add(buf)
+                    boundary = pos + len
+                }
             }
+            RandomAccessFile(part, "rw").use { it.setLength(boundary) }
+            return boundary to chain.value
         }
     }
 
     class MegaException(message: String) : IOException(message)
 
     /**
-     * Downloads [url] to [dest] (written via a temp file, replaced only after the MAC verifies).
+     * Downloads [url] to [dest] (written via a `.part` file, moved into place only after the MAC
+     * verifies). An interrupted download picks up from the last whole chunk on the next try.
      * [onProgress] receives (bytesDone, totalBytes). [isCancelled] is polled between reads.
      * Returns the file name stored on Mega.
      */
@@ -172,23 +224,37 @@ class MegaDownloader(private val http: OkHttpClient) {
         val attrs = decryptAttributes(info.getString("at"), nk.key)
         val size = info.getLong("s")
 
-        val tmp = File(dest.parentFile, dest.name + ".part")
-        dest.parentFile?.mkdirs()
-        try {
-            val req = Request.Builder().url(info.getString("g")).build()
-            http.newCall(req).execute().use { resp ->
+        val part = PartialFile(dest, url)
+        var start = 0L
+        var mac = ByteArray(16)
+        if (part.resumable() > 0) {
+            val (b, m) = resumePoint(part.file, size, nk)
+            start = b; mac = m
+        } else {
+            part.begin()
+        }
+        if (start < size) {
+            // Mega storage URLs take a byte range as a path suffix.
+            val g = info.getString("g") + if (start > 0) "/$start-${size - 1}" else ""
+            http.newCall(Request.Builder().url(g).build()).execute().use { resp ->
                 if (!resp.isSuccessful) throw MegaException("Mega storage HTTP ${resp.code}")
                 val input = resp.body?.byteStream() ?: throw MegaException("Empty Mega response")
-                tmp.outputStream().buffered(1 shl 16).use { out ->
-                    decryptStream(input, out, size, nk, onProgress, isCancelled)
+                FileOutputStream(part.file, start > 0).buffered(1 shl 16).use { out ->
+                    try {
+                        decryptStream(input, out, size, nk, onProgress, isCancelled, start, mac)
+                    } catch (e: MegaException) {
+                        // A bad MAC means the bytes on disk can't be trusted; start clean next time.
+                        if (e.message?.contains("integrity") == true) { out.flush(); part.discard() }
+                        throw e
+                    }
                 }
             }
-            if (dest.exists()) dest.delete()
-            if (!tmp.renameTo(dest)) throw MegaException("Could not move downloaded file into place")
-            return attrs.optString("n", dest.name)
-        } finally {
-            if (tmp.exists()) tmp.delete()
+        } else {
+            // Everything was already on disk; just check it.
+            if (!ChunkMac(nk, mac).matches(nk.metaMac)) { part.discard(); throw MegaException("Mega download failed integrity check") }
         }
+        part.commit(dest)
+        return attrs.optString("n", dest.name)
     }
 
     private fun fileInfo(handle: String): JSONObject {

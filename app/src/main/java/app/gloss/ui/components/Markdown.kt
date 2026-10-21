@@ -10,10 +10,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -24,7 +24,10 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import app.gloss.data.RosettaFormat
-import app.gloss.ui.theme.Ink
+import app.gloss.ui.theme.Gloss
+
+/** Neutral tint for `code` spans; reads on both light and dark grounds. */
+private val CodeTint = Color(0x26808599)
 
 /** Inline markdown: **bold**, __bold__, *italic*, _italic_, `code`. */
 fun inlineMarkdown(text: String, highlight: List<String> = emptyList(), marker: SpanStyle? = null): AnnotatedString {
@@ -51,7 +54,7 @@ fun inlineMarkdown(text: String, highlight: List<String> = emptyList(), marker: 
                 s[i] == '`' -> {
                     val end = s.indexOf('`', i + 1)
                     if (end > i) {
-                        withStyle(SpanStyle(background = Ink.SurfaceHigh)) { append(s.substring(i + 1, end)) }
+                        withStyle(SpanStyle(background = CodeTint)) { append(s.substring(i + 1, end)) }
                         i = end + 1
                     } else { append('`'); i++ }
                 }
@@ -85,7 +88,7 @@ fun MarkdownBlock(
     modifier: Modifier = Modifier,
     highlight: List<String> = emptyList(),
 ) {
-    val marker = SpanStyle(background = Ink.Marker)
+    val marker = SpanStyle(background = Gloss.colors.goldWash)
     when (block.kind) {
         RosettaFormat.BlockKind.HEADING -> Text(
             inlineMarkdown(block.text.trimStart('#', ' '), highlight, marker),
@@ -101,7 +104,7 @@ fun MarkdownBlock(
                 Row {
                     Text(
                         if (ordered) "${idx + 1}." else "•",
-                        style = style.copy(color = Ink.Muted),
+                        style = style.copy(color = Gloss.colors.secondary),
                         modifier = Modifier.width(22.dp),
                     )
                     Text(inlineMarkdown(body, highlight, marker), style = style)
@@ -137,22 +140,23 @@ private fun MarkdownTable(text: String, style: TextStyle, modifier: Modifier, hi
         .map { line -> line.trim('|').split('|').map { it.trim() } }
     if (rows.isEmpty()) return
     val cols = rows.maxOf { it.size }
-    val marker = SpanStyle(background = Ink.Marker)
+    val g = Gloss.colors
+    val marker = SpanStyle(background = g.goldWash)
     val cellStyle = style.copy(fontSize = style.fontSize * 0.92f, lineHeight = 1.4.em)
     Column(
         modifier
             .horizontalScroll(rememberScrollState())
-            .border(1.dp, Ink.Line),
+            .border(1.dp, g.separator),
     ) {
         rows.forEachIndexed { r, cells ->
-            Row(Modifier.background(if (r == 0) Ink.SurfaceHigh else Ink.Surface.copy(alpha = if (r % 2 == 0) 0.5f else 0f))) {
+            Row(Modifier.background(if (r == 0) g.fill else g.fill.copy(alpha = if (r % 2 == 0) 0.4f else 0f))) {
                 for (c in 0 until cols) {
                     Text(
                         inlineMarkdown(cells.getOrElse(c) { "" }, highlight, marker),
                         style = if (r == 0) cellStyle.copy(fontWeight = FontWeight.Bold) else cellStyle,
                         modifier = Modifier
                             .widthIn(min = 72.dp, max = 220.dp)
-                            .border(0.5.dp, Ink.Line)
+                            .border(0.5.dp, g.separator)
                             .padding(horizontal = 8.dp, vertical = 6.dp),
                     )
                 }
@@ -169,5 +173,5 @@ fun blockPlainText(block: RosettaFormat.Block): String =
 
 @Composable
 fun MutedText(text: String, modifier: Modifier = Modifier) {
-    Text(text, style = MaterialTheme.typography.bodySmall, modifier = modifier)
+    Text(text, style = Gloss.type.footnote, color = Gloss.colors.secondary, modifier = modifier)
 }
