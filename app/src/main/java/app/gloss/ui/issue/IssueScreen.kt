@@ -393,7 +393,7 @@ private fun MorphButton(
 
 /** A lapis ring that fills clockwise, with a stop square in the middle; spins when the size is unknown. */
 @Composable
-private fun ProgressRing(fraction: Float?, modifier: Modifier = Modifier) {
+fun ProgressRing(fraction: Float?, modifier: Modifier = Modifier) {
     val g = Gloss.colors
     val shown by animateFloatAsState(fraction ?: 0.25f, Motion.settle(), label = "ring")
     val spin = rememberInfiniteTransition(label = "spin")

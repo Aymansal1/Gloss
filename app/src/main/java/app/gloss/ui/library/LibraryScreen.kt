@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -36,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -50,6 +52,8 @@ import app.gloss.ui.components.EmptyState
 import app.gloss.ui.components.IssueCover
 import app.gloss.ui.components.LargeTitleScreen
 import app.gloss.ui.components.Section
+import app.gloss.ui.components.pressable
+import app.gloss.ui.issue.ProgressRing
 import app.gloss.ui.components.SegmentedControl
 import app.gloss.ui.components.SharedCover
 import app.gloss.ui.container
@@ -82,6 +86,8 @@ fun LibraryScreen(nav: Nav, reselect: Flow<Unit> = emptyFlow()) {
     }
     val total = sizes.values.sum()
     val marks = remember(bookmarks, installed) { bookmarks.filter { installed.containsKey(it.issueId) } }
+    val activeFlow = remember { c.downloads.active() }
+    val downloading by activeFlow.collectAsState(emptySet())
     val list = rememberLazyListState()
     ScrollToTopOn(reselect, list)
 
@@ -100,7 +106,24 @@ fun LibraryScreen(nav: Nav, reselect: Flow<Unit> = emptyFlow()) {
         },
     ) {
         if (view == 0) {
-            if (issues.isEmpty()) {
+            if (downloading.isNotEmpty()) {
+                item(key = "downloading") {
+                    Section(Modifier.padding(top = 8.dp), header = "Downloading") {
+                        val ids = downloading.sorted()
+                        ids.forEachIndexed { i, id ->
+                            DownloadRow(
+                                id = id,
+                                cover = catalog.firstOrNull { it.id == id }?.let { CoverInfo.of(it) }
+                                    ?: installed[id]?.let { CoverInfo.of(it) },
+                                last = i == ids.lastIndex,
+                                onClick = { nav.issue(id) },
+                                onCancel = { c.downloads.cancel(id) },
+                            )
+                        }
+                    }
+                }
+            }
+            if (issues.isEmpty() && downloading.isEmpty()) {
                 item(key = "empty") {
                     EmptyState(
                         title = "Your shelf is empty",
@@ -108,9 +131,9 @@ fun LibraryScreen(nav: Nav, reselect: Flow<Unit> = emptyFlow()) {
                         icon = Icons.Rounded.Inventory2,
                     )
                 }
-            } else {
+            } else if (issues.isNotEmpty()) {
                 item(key = "issues") {
-                    Section(Modifier.padding(top = 8.dp)) {
+                    Section(Modifier.padding(top = if (downloading.isNotEmpty()) 26.dp else 8.dp)) {
                         issues.forEachIndexed { i, issue ->
                             val cat = catalog.firstOrNull { it.id == issue.id }
                             val hasUpdate = cat != null && cat.version.isNotBlank() && issue.version.isNotBlank() &&
@@ -209,6 +232,35 @@ private fun IssueRow(
             DropdownMenuItem(text = { Text("Remove from phone", color = c.danger) }, onClick = { menu = false; onRemove() })
         }
     }
+}
+
+/** An issue on its way down: live progress, and the ring doubles as the stop button. */
+@Composable
+private fun DownloadRow(id: String, cover: CoverInfo?, last: Boolean, onClick: () -> Unit, onCancel: () -> Unit) {
+    val c = container()
+    val flow = remember(id) { c.downloads.progress(id) }
+    val p by flow.collectAsState(null)
+    val percent = p?.fraction?.let { f -> "${(f * 100).toInt()}% of ${formatBytes(p?.total ?: 0)}" }
+    Cell(
+        title = cover?.magazineName ?: id,
+        subtitle = listOfNotNull(
+            cover?.title?.let { prettyDate(it) },
+            percent ?: p?.stage?.takeIf { it.isNotBlank() },
+        ).joinToString(" · "),
+        leading = { if (cover != null) IssueCover(cover, Modifier.width(44.dp)) else Spacer(Modifier.width(44.dp)) },
+        trailing = {
+            Box(
+                Modifier
+                    .size(44.dp)
+                    .pressable(onCancel, scaleTo = 0.88f, onClickLabel = "Stop downloading", role = Role.Button),
+                contentAlignment = Alignment.Center,
+            ) {
+                ProgressRing(p?.fraction, Modifier.size(44.dp))
+            }
+        },
+        onClick = onClick,
+        divider = !last,
+    )
 }
 
 @Composable
