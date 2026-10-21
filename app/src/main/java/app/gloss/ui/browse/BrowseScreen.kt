@@ -384,11 +384,12 @@ private fun Shelf(
 
 @Composable
 fun ShelfIssue(item: CatalogItem, installed: InstalledIssue?, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val badge: (@Composable () -> Unit)? = installed?.let { inst -> { SavedBadge(textOnly = !inst.hasScan) } }
     CoverTile(
         CoverInfo.of(item),
         prettyDate(item.displayTitle),
         modifier,
-        badge = installed?.let { inst -> @Composable { SavedBadge(textOnly = !inst.hasScan) } },
+        badge = badge,
         onClick = onClick,
     )
 }

@@ -43,7 +43,9 @@ jobs:
           git push
 
       - name: Unit tests
-        run: ./gradlew :app:testDebugUnitTest --stacktrace
+        run: |
+          set -o pipefail
+          ./gradlew :app:testDebugUnitTest 2>&1 | tee build.log
 
       - name: Summarise tests
         if: always()
@@ -73,7 +75,14 @@ jobs:
           GLOSS_KEYSTORE_PASSWORD: ${{ secrets.GLOSS_KEYSTORE_PASSWORD }}
           GLOSS_KEY_ALIAS: ${{ secrets.GLOSS_KEY_ALIAS }}
           GLOSS_KEY_PASSWORD: ${{ secrets.GLOSS_KEY_PASSWORD }}
-        run: ./gradlew :app:assembleRelease --stacktrace
+        run: |
+          set -o pipefail
+          ./gradlew :app:assembleRelease 2>&1 | tee -a build.log
+
+      # Compiler errors, gathered at the end of the log where they're easy to find.
+      - name: Compile errors
+        if: failure()
+        run: grep -E "^e: " build.log | sed 's#file:///home/runner/work/Gloss/Gloss/##' || true
 
       - name: Upload test reports
         if: failure()

@@ -189,6 +189,7 @@ private fun IssueRow(
 ) {
     var menu by remember { mutableStateOf(false) }
     val c = Gloss.colors
+    val updateDot: (@Composable () -> Unit)? = if (hasUpdate) ({ UpdateDot() }) else null
     Box {
         Cell(
             title = issue.magazineName,
@@ -198,7 +199,7 @@ private fun IssueRow(
                 size?.let { formatBytes(it) },
             ).joinToString(" · "),
             leading = { IssueCover(CoverInfo.of(issue), Modifier.width(44.dp)) },
-            trailing = if (hasUpdate) @Composable { UpdateDot() } else null,
+            trailing = updateDot,
             chevron = true,
             onClick = onClick,
             onLongClick = { menu = true },
