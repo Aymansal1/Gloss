@@ -169,6 +169,102 @@ def wordmark():
 """)
 
 
+INTER = "app/src/main/res/font/inter_variable.ttf"
+
+
+def banner():
+    """The README banner: the wordmark, and a page being glossed (gold sweeps under a box of
+    Japanese, then the English unfurls beside it). Loops with CSS; still for reduced motion."""
+    W, H = 1280, 560
+    d, adv, _ = outline("gloss", 150, x=96, baseline=262)
+    _, g_adv, _ = outline("gl", 150)
+    bar = skew_bar(96 + g_adv + 2, 262 + 150 * 0.04, adv - g_adv - 8, 150 * 0.07)
+    tag1, _, _ = outline("Japanese game magazines,", 34, x=100, baseline=350, font=INTER)
+    tag2, _, _ = outline("with the English one tap away.", 34, x=100, baseline=394, font=INTER)
+    note, _, _ = outline("Gaming Alexandria's archive, for Android", 19, x=100, baseline=452, font=INTER, tracking=0.4)
+
+    # The page: a cream scan, vertical columns of "Japanese" as ink strokes.
+    px, py, pw, ph = 800, 56, 330, 448
+    bx, by, bw, bh = px + 170, py + 196, 56, 104          # the box that gets glossed
+    ix, iy, iw, ih = px + 26, py + 300, 118, 118          # a screenshot on the page
+    # Each column is a run of character-sized squares, with the odd gap for punctuation.
+    strokes = []
+    for col in range(9):
+        x = px + pw - 44 - col * 26
+        y = py + 128
+        k = 0
+        while y + 12 < py + ph - 30:
+            gap = (col * 5 + k * 3) % 13 == 0
+            blocked = (bx - 14 <= x <= bx + bw + 2 and y + 12 > by - 4 and y < by + bh + 12) or \
+                      (ix - 14 <= x <= ix + iw + 4 and y + 12 > iy - 8)
+            if not gap and not blocked:
+                strokes.append(f'<rect x="{x}" y="{y}" width="12" height="12" rx="2"/>')
+            y += 16
+            k += 1
+    # A headline in big characters, and a red kicker block.
+    head = "".join(f'<rect x="{px + 26 + i * 48}" y="{py + 30}" width="40" height="40" rx="5"/>' for i in range(6))
+    kicker = f'<rect x="{px + 26}" y="{py + 84}" width="96" height="18" rx="3" fill="#D9462B"/>'
+    shot = f'<rect x="{ix}" y="{iy}" width="{iw}" height="{ih}" rx="4" fill="#3B4B8F" fill-opacity="0.85"/>' \
+           f'<path d="M{ix} {iy + ih - 30}l34 -26l26 18l30 -34l28 28v{30 - 4}q0 4 -4 4h-{iw - 8}q-4 0 -4 -4z" fill="#8FA3E8" fill-opacity="0.7"/>'
+    box_strokes = "".join(f'<rect x="{bx + 10 + c * 22}" y="{by + 12 + r * 16}" width="12" height="12" rx="2"/>'
+                          for c in range(2) for r in range(5 - c))
+    # The callout with real English.
+    cx, cy, cw, ch = 690, by + bh + 22, 380, 132
+    l1, _, _ = outline("Mario returns! A first look", 22, x=cx + 22, baseline=cy + 44, font=INTER)
+    l2, _, _ = outline("at the new adventure, with", 22, x=cx + 22, baseline=cy + 74, font=INTER)
+    l3, _, _ = outline("eight brand-new worlds.", 22, x=cx + 22, baseline=cy + 104, font=INTER)
+
+    write(f"{SVG}/banner.svg", f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" role="img" aria-label="Gloss: Japanese game magazines, with the English one tap away">
+  <defs>
+    <radialGradient id="night" cx="0.72" cy="0.38" r="0.9">
+      <stop offset="0" stop-color="{LAPIS_DEEP}"/><stop offset="0.6" stop-color="#0B1036"/><stop offset="1" stop-color="{NIGHT}"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="{GOLD_HI}"/><stop offset="0.55" stop-color="{GOLD}"/><stop offset="1" stop-color="{GOLD_LO}"/>
+    </linearGradient>
+    <filter id="lift" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+  <style>
+    .bar  {{ transform-box: fill-box; transform-origin: left; animation: draw 6s cubic-bezier(.2,.8,.2,1) infinite; }}
+    .wash {{ animation: wash 6s ease-out infinite; }}
+    .leaf {{ transform-box: fill-box; transform-origin: left; animation: leaf 6s cubic-bezier(.2,.8,.2,1) infinite; }}
+    .note {{ transform-box: fill-box; transform-origin: 60% 0; animation: note 6s cubic-bezier(.2,.9,.25,1.05) infinite; }}
+    .tap  {{ transform-box: fill-box; transform-origin: center; animation: tap 6s ease-out infinite; }}
+    @keyframes draw {{ 0%, 4% {{ transform: scaleX(0) }} 16%, 100% {{ transform: scaleX(1) }} }}
+    @keyframes tap  {{ 0%, 18% {{ opacity: 0; transform: scale(.4) }} 22% {{ opacity: .9; transform: scale(1) }} 32%, 100% {{ opacity: 0; transform: scale(1.8) }} }}
+    @keyframes wash {{ 0%, 22% {{ opacity: 0 }} 30%, 88% {{ opacity: 1 }} 96%, 100% {{ opacity: 0 }} }}
+    @keyframes leaf {{ 0%, 24% {{ transform: scaleX(0) }} 38%, 88% {{ transform: scaleX(1); opacity: 1 }} 96%, 100% {{ transform: scaleX(1); opacity: 0 }} }}
+    @keyframes note {{ 0%, 34% {{ opacity: 0; transform: translateY(-14px) scale(.92) }} 46%, 88% {{ opacity: 1; transform: none }} 96%, 100% {{ opacity: 0; transform: none }} }}
+    @media (prefers-reduced-motion: reduce) {{ .bar, .wash, .leaf, .note, .tap {{ animation: none }} .tap {{ opacity: 0 }} }}
+  </style>
+  <rect width="{W}" height="{H}" fill="url(#night)"/>
+  <path class="bar" d="{bar}" fill="url(#gold)"/>
+  <path d="{tidy(d)}" fill="{WHITE}"/>
+  <path d="{tidy(tag1)}" fill="{WHITE}"/>
+  <path d="{tidy(tag2)}" fill="{WHITE}" fill-opacity="0.72"/>
+  <path d="{tidy(note)}" fill="{GOLD_HI}" fill-opacity="0.85"/>
+  <g filter="url(#lift)">
+    <rect x="{px}" y="{py}" width="{pw}" height="{ph}" rx="6" fill="#F7F2E6"/>
+  </g>
+  <g fill="#2B2620" fill-opacity="0.78">{head}{''.join(strokes)}</g>
+  {kicker}{shot}
+  <rect class="wash" x="{bx}" y="{by}" width="{bw}" height="{bh}" rx="5" fill="{GOLD}" fill-opacity="0.32"/>
+  <g fill="#2B2620" fill-opacity="0.78">{box_strokes}</g>
+  <rect class="leaf" x="{bx}" y="{by + bh + 5}" width="{bw}" height="5" rx="2.5" fill="url(#gold)"/>
+  <circle class="tap" cx="{bx + bw / 2}" cy="{by + bh / 2}" r="26" fill="{WHITE}" fill-opacity="0.55"/>
+  <g class="note" filter="url(#lift)">
+    <rect x="{cx}" y="{cy}" width="{cw}" height="{ch}" rx="20" fill="#141832" fill-opacity="0.96" stroke="{GOLD}" stroke-opacity="0.5"/>
+    <path d="{tidy(l1)}" fill="{WHITE}"/>
+    <path d="{tidy(l2)}" fill="{WHITE}"/>
+    <path d="{tidy(l3)}" fill="{WHITE}" fill-opacity="0.9"/>
+  </g>
+</svg>
+""")
+
+
 if __name__ == "__main__":
     icon_layers()
     wordmark()
+    banner()
