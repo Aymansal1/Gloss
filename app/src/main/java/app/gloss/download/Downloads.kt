@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.pm.ServiceInfo
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.Data
@@ -28,6 +29,7 @@ import okhttp3.Request
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 
 enum class DownloadMode {
     /** Transcription/translation data only. */
@@ -48,6 +50,26 @@ data class DownloadProgress(
     val fraction: Float? get() = if (total > 0) (done.toFloat() / total).coerceIn(0f, 1f) else null
 }
 
+/** A download that trying again won't fix, like a full phone or a file that's gone. */
+open class PermanentDownloadError(message: String) : IOException(message)
+
+class NotEnoughSpace(needed: Long, free: Long) :
+    PermanentDownloadError("Not enough space: needs ${formatSize(needed)}, ${formatSize(free)} free")
+
+private fun formatSize(bytes: Long): String =
+    if (bytes >= 1L shl 30) String.format(java.util.Locale.US, "%.1f GB", bytes / (1L shl 30).toDouble())
+    else "${(bytes + (1L shl 20) - 1) shr 20} MB"
+
+/** Throws [NotEnoughSpace] unless [dir] can take [bytes] more and still leave the phone some room. */
+internal fun ensureSpace(dir: File?, bytes: Long) {
+    if (dir == null || bytes <= 0) return
+    val free = dir.usableSpace
+    // Keep a margin so a download never fills the phone to the last byte.
+    if (bytes + SPACE_MARGIN > free) throw NotEnoughSpace(bytes, (free - SPACE_MARGIN).coerceAtLeast(0))
+}
+
+private const val SPACE_MARGIN = 64L shl 20
+
 /** Fetches a URL into a file, trying each mirror in order. Mega links are decrypted natively. */
 class SourceFetcher(private val http: OkHttpClient) {
     private val mega = MegaDownloader(http)
@@ -60,18 +82,23 @@ class SourceFetcher(private val http: OkHttpClient) {
     ) {
         if (sources.isEmpty()) throw IOException("No download sources listed")
         var last: Exception? = null
+        var allPermanent = true
         for (url in sources) {
             try {
                 if (MegaDownloader.isMegaUrl(url)) mega.download(url, dest, onProgress, isCancelled)
                 else plain(url, dest, onProgress, isCancelled)
                 return
+            } catch (e: NotEnoughSpace) {
+                throw e // Another mirror won't make room.
             } catch (e: Exception) {
                 if (isCancelled()) throw e
                 Log.w("Fetcher", "Source failed: ${redact(url)}", e)
                 last = e
+                if (e !is PermanentDownloadError) allPermanent = false
             }
         }
-        throw IOException("All sources failed: ${last?.message}", last)
+        val message = "All sources failed: ${last?.message}"
+        throw if (allPermanent) PermanentDownloadError(message) else IOException(message, last)
     }
 
     private fun plain(url: String, dest: File, onProgress: (Long, Long) -> Unit, isCancelled: () -> Boolean) {
@@ -82,7 +109,11 @@ class SourceFetcher(private val http: OkHttpClient) {
         http.newCall(req).execute().use { resp ->
             // The server forgot the range (file changed, or past the end): start this source over.
             if (resp.code == 416) { part.discard(); return plain(url, dest, onProgress, isCancelled) }
-            if (!resp.isSuccessful) throw IOException("HTTP ${resp.code}")
+            if (!resp.isSuccessful) {
+                // A 4xx means the file isn't there for us; only timeouts and rate limits are worth a retry.
+                val permanent = resp.code in 400..499 && resp.code != 408 && resp.code != 429
+                throw if (permanent) PermanentDownloadError("HTTP ${resp.code}") else IOException("HTTP ${resp.code}")
+            }
             val body = resp.body ?: throw IOException("Empty response")
             // Only trust a 206 that starts exactly where our bytes end; anything else restarts.
             val resumed = have > 0 && resp.code == 206 &&
@@ -90,6 +121,7 @@ class SourceFetcher(private val http: OkHttpClient) {
             if (!resumed) part.begin()
             val start = if (resumed) have else 0L
             val total = body.contentLength().let { if (it >= 0) it + start else -1L }
+            if (total > 0) ensureSpace(dest.parentFile, total - start)
             body.byteStream().use { input ->
                 FileOutputStream(part.file, resumed).buffered(1 shl 16).use { out ->
                     val buf = ByteArray(1 shl 16)
@@ -122,6 +154,8 @@ class DownloadWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(c
         const val KEY_DONE = "done"
         const val KEY_TOTAL = "total"
         const val KEY_ERROR = "error"
+        /** Tries per download before a dropped connection counts as a failure. */
+        const val MAX_ATTEMPTS = 6
         private const val CHANNEL = "downloads"
     }
 
@@ -154,6 +188,12 @@ class DownloadWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(c
             c.search.indexIssue(id)
             Result.success()
         } catch (e: Exception) {
+            // A dropped connection is retried later and resumes from the bytes already on disk.
+            val transient = e is IOException && e !is PermanentDownloadError
+            if (transient && !isStopped && runAttemptCount + 1 < MAX_ATTEMPTS) {
+                Log.w("DownloadWorker", "Download interrupted for $id; retrying", e)
+                return@withContext Result.retry()
+            }
             Log.e("DownloadWorker", "Download failed for $id", e)
             // Leave any already-complete files; an empty dir from a failed first install is removed.
             if (dir.listFiles().isNullOrEmpty()) dir.delete()
@@ -221,6 +261,7 @@ class DownloadCenter(private val context: Context) {
         val req = OneTimeWorkRequestBuilder<DownloadWorker>()
             .setInputData(Data.Builder().putString(DownloadWorker.KEY_ID, id).putString(DownloadWorker.KEY_MODE, mode.name).build())
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 20, TimeUnit.SECONDS)
             .addTag("download")
             .addTag("id:$id")
             .build()
@@ -235,8 +276,10 @@ class DownloadCenter(private val context: Context) {
         wm.getWorkInfosForUniqueWorkFlow(name(id)).map { infos ->
             val info = infos.lastOrNull() ?: return@map null
             when (info.state) {
-                WorkInfo.State.ENQUEUED, WorkInfo.State.BLOCKED ->
-                    DownloadProgress(running = true, stage = "Waiting for network…")
+                WorkInfo.State.ENQUEUED, WorkInfo.State.BLOCKED -> DownloadProgress(
+                    running = true,
+                    stage = if (info.runAttemptCount > 0) "Connection lost, trying again soon…" else "Waiting for network…",
+                )
                 WorkInfo.State.RUNNING -> DownloadProgress(
                     running = true,
                     stage = info.progress.getString(DownloadWorker.KEY_STAGE) ?: "Starting…",

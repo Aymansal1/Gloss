@@ -234,6 +234,7 @@ class MegaDownloader(private val http: OkHttpClient) {
             part.begin()
         }
         if (start < size) {
+            ensureSpace(dest.parentFile, size - start)
             // Mega storage URLs take a byte range as a path suffix.
             val g = info.getString("g") + if (start > 0) "/$start-${size - 1}" else ""
             http.newCall(Request.Builder().url(g).build()).execute().use { resp ->
