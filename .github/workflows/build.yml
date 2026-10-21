@@ -82,7 +82,8 @@ jobs:
       # Compiler errors, gathered at the end of the log where they're easy to find.
       - name: Compile errors
         if: failure()
-        run: grep -E "^e: " build.log | sed 's#file:///home/runner/work/Gloss/Gloss/##' || true
+        run: |
+          grep -E '^e: ' build.log | sed 's#file:///home/runner/work/Gloss/Gloss/##' || true
 
       - name: Upload test reports
         if: failure()
