@@ -9,6 +9,8 @@
 ![Android 13+](https://img.shields.io/badge/Android-13%2B-2338C2?labelColor=141E78)
 ![License](https://img.shields.io/badge/license-AGPL--3.0-2338C2?labelColor=141E78)
 
+**[▶ Watch the 16-second tour](docs/brand/video/gloss-promo.mp4)**
+
 **[Install](#install)** &nbsp;·&nbsp; **[Reading](#reading)** &nbsp;·&nbsp; **[Search](#search)** &nbsp;·&nbsp; **[How it works](#how-it-works)** &nbsp;·&nbsp; **[Building](#building)**
 
 </div>
@@ -100,7 +102,7 @@ Gloss downloads Mega files without Mega's app. It asks Mega's public API for the
 | `…/ui/components/` | The shared kit: glass bars, large titles, the tab bar, cells, switches, covers |
 | `…/ui/` | Screens: Discover, Series, Issue, Library, Search, Settings and the Reader |
 | `app/src/test/` | Unit tests for the parsers, search, spreads, backups, update checks and Mega decryption |
-| `docs/brand/` | `build.py` draws the icon, wordmark and this banner from the bundled fonts |
+| `docs/brand/` | `build.py` draws the icon, wordmark and this banner from the bundled fonts; `video/` holds the promo and its [HyperFrames](https://hyperframes.heygen.com) source |
 
 </details>
 

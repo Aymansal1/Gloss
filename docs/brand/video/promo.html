@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="assets/gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "Inter"; src: url("assets/inter_variable.ttf") format("truetype"); font-weight: 100 900; }
+      @font-face { font-family: "Instrument Serif"; src: url("assets/instrument_serif_italic.ttf") format("truetype"); font-style: italic; }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; overflow: hidden; background: #070a1c; }
+      #root { width: 100%; height: 100%; position: relative; overflow: hidden; font-family: "Inter", sans-serif; }
+      .clip { position: absolute; inset: 0; }
+      #ground { background: radial-gradient(ellipse 80% 90% at 66% 42%, #141e78 0%, #0b1036 58%, #070a1c 100%); }
+
+      /* Left-hand captions */
+      .cap { position: absolute; left: 160px; top: 420px; width: 760px; color: #fff; font-weight: 650; font-size: 76px; line-height: 1.05; letter-spacing: -0.03em; opacity: 0; }
+      .cap em { font-family: "Instrument Serif", serif; font-style: italic; font-weight: 400; color: #f6d886; letter-spacing: 0; font-size: 1.12em; }
+      .kicker { position: absolute; left: 164px; top: 340px; color: #f6d886; font-size: 26px; font-weight: 600; letter-spacing: 0.02em; opacity: 0; }
+
+      /* The page */
+      #page { position: absolute; left: 1080px; top: 76px; width: 680px; height: 928px; background: #f7f2e6; border-radius: 8px; box-shadow: 0 40px 90px rgba(0,0,0,.55); }
+      .ink { position: absolute; background: #2b2620; opacity: .8; border-radius: 3px; }
+      .hd { position: absolute; top: 40px; width: 82px; height: 82px; background: #2b2620; opacity: .85; border-radius: 6px; }
+      #kick { position: absolute; left: 40px; top: 150px; width: 190px; height: 30px; background: #d5412a; border-radius: 4px; }
+      #shot { position: absolute; left: 42px; top: 210px; width: 266px; height: 304px; background: #3b4b8f; border-radius: 6px; overflow: hidden; }
+      #shot svg { position: absolute; left: 0; bottom: 0; }
+      .wash { position: absolute; background: rgba(227,179,65,.34); border-radius: 6px; opacity: 0; }
+      .leaf { position: absolute; height: 6px; border-radius: 3px; background: linear-gradient(90deg, #f6d886, #e3b341 55%, #b98320); transform-origin: left center; }
+      #tap { position: absolute; width: 90px; height: 90px; border-radius: 50%; background: rgba(255,255,255,.6); opacity: 0; }
+
+      /* The gloss callout */
+      #note { position: absolute; left: 230px; top: 550px; width: 560px; padding: 30px 34px 26px; background: rgba(20,24,50,.97); border: 1.5px solid rgba(227,179,65,.55); border-radius: 26px; box-shadow: 0 30px 70px rgba(0,0,0,.55); opacity: 0; transform-origin: 70% 0; }
+      #note p { color: #fff; font-size: 31px; line-height: 1.32; font-weight: 450; }
+      #note .jp { margin-top: 12px; color: rgba(255,255,255,.55); font-size: 22px; font-weight: 400; }
+      #note .more { display: flex; align-items: center; gap: 12px; margin-top: 16px; color: #f6d886; font-size: 21px; font-weight: 600; }
+      #note .more i { display: block; width: 28px; height: 3px; border-radius: 2px; background: linear-gradient(90deg, #f6d886, #b98320); }
+      .w { display: inline-block; opacity: 0; }
+
+      /* Translate-the-page: English set into every box */
+      .mg { position: absolute; background: #fcfbf8; border-radius: 4px; display: flex; align-items: center; justify-content: center; text-align: center; color: #14161f; font-weight: 600; padding: 10px; opacity: 0; }
+
+      /* The lockup */
+      #mark { position: absolute; left: 50%; top: 330px; width: 640px; margin-left: -320px; }
+      #mark svg { width: 640px; height: auto; display: block; }
+      #tag { position: absolute; left: 0; right: 0; top: 760px; text-align: center; color: #fff; font-size: 46px; font-weight: 500; letter-spacing: -0.02em; opacity: 0; }
+      #tag span { color: rgba(255,255,255,.66); }
+      #foot { position: absolute; left: 0; right: 0; top: 860px; text-align: center; color: #f6d886; font-size: 26px; font-weight: 500; letter-spacing: 0.02em; opacity: 0; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="16" data-width="1920" data-height="1080">
+      <div id="ground" class="clip" data-start="0" data-duration="16" data-track-index="0"></div>
+
+      <div id="scene-read" class="clip" data-start="0" data-duration="11.2" data-track-index="1">
+        <div class="kicker" id="k1">Gloss for Android</div>
+        <div class="cap" id="c1">Tap the Japanese.</div>
+        <div class="cap" id="c2">Read the <em>English</em>.</div>
+        <div class="cap" id="c3">Or the whole page.</div>
+
+        <div id="page">
+          <div id="ink"></div>
+          <div id="kick"></div>
+          <div id="shot">
+            <svg width="266" height="160" viewBox="0 0 230 150" preserveAspectRatio="none"><path d="M0 150V96l60-46 44 32 50-58 76 70v56z" fill="#8fa3e8" fill-opacity=".7"/></svg>
+          </div>
+          <div class="wash" id="wash" style="left:478px;top:200px;width:164px;height:318px"></div>
+          <div class="leaf" id="leaf" style="left:478px;top:526px;width:164px"></div>
+          <div id="tap" style="left:515px;top:315px"></div>
+          <div id="manga"></div>
+          <div id="note">
+            <p id="en"></p>
+            <p class="jp">マリオが帰ってきた！新しい冒険をひと足先に</p>
+            <div class="more"><i></i>Whole page</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="scene-mark" class="clip" data-start="10.6" data-duration="5.4" data-track-index="2">
+        <div id="mark"></div>
+        <div id="tag">Japanese game magazines, <span>with the English one tap away.</span></div>
+        <div id="foot">Free and open source · github.com/Aymansal1/Gloss</div>
+      </div>
+    </div>
+
+    <script>
+      // ---- Build the page deterministically --------------------------------------------
+      const ink = document.getElementById("ink");
+      const add = (el, cls, css) => { const d = document.createElement("div"); d.className = cls; Object.assign(d.style, css); el.appendChild(d); return d; };
+      for (let i = 0; i < 6; i++) add(ink, "hd", { left: 40 + i * 100 + "px" });
+      // Vertical columns of character squares; holes where the screenshot sits.
+      const cols = [];
+      for (let c = 0; c < 15; c++) {
+        const x = 610 - c * 40;
+        const col = [];
+        const stop1 = 9 + ((c * 3) % 3);            // paragraph ends in the top block
+        for (let r = 0; r < 24; r++) {
+          const y = 210 + r * 28;
+          if (x < 300 && y < 530) continue;           // screenshot
+          if (r === 11) continue;                      // gutter between blocks
+          if (r < 11 && r > stop1) continue;
+          if ((c * 5 + r * 3) % 17 === 0) continue;    // punctuation
+          col.push(add(ink, "ink", { left: x + "px", top: y + "px", width: "24px", height: "24px" }));
+        }
+        cols.push(col);
+      }
+
+      // Regions that get English set into them in "translate page" mode.
+      const manga = document.getElementById("manga");
+      const regions = [
+        [40, 34, 600, 96, "MARIO RETURNS!", 46, 800],
+        [478, 200, 164, 318, "Mario returns! A first look at the new adventure, with eight brand-new worlds.", 22, 600],
+        [322, 200, 152, 318, "Two years in the making, and it shows on every screen.", 21, 600],
+        [478, 538, 164, 346, "Out this winter. Price still to be announced.", 22, 600],
+        [322, 538, 152, 346, "Plus readers' high scores and next issue's preview.", 21, 600],
+        [42, 538, 274, 346, "Screens are from a work-in-progress version.", 23, 600],
+      ].map(([l, t, w, h, txt, fs, fw]) => {
+        const m = add(manga, "mg", { left: l + "px", top: t + "px", width: w + "px", height: h + "px", fontSize: fs + "px", fontWeight: fw, lineHeight: "1.25" });
+        m.textContent = txt;
+        return m;
+      });
+
+      // The callout's English, word by word.
+      const en = document.getElementById("en");
+      "Mario returns! A first look at the new adventure, with eight brand-new worlds.".split(" ").forEach((w, i, a) => {
+        const s = document.createElement("span"); s.className = "w"; s.textContent = w; en.appendChild(s);
+        if (i < a.length - 1) en.appendChild(document.createTextNode(" "));
+      });
+
+      // Wordmark, inlined so its gold bar can draw.
+      document.getElementById("mark").innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 235 149" >   <defs>     <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">       <stop offset="0" stop-color="#F6D886"/><stop offset="0.55" stop-color="#E3B341"/><stop offset="1" stop-color="#B98320"/>     </linearGradient>   </defs>   <path d="M92.68 114.8L208.84 114.8L207.08 123.2L90.92 123.2Z" fill="url(#gold)"/>   <path d="M23.16 135.92Q13.68 135.92 8.76 132.44Q3.84 128.96 3.84 124.16Q3.84 119.96 7.14 115.94Q10.44 111.92 19.32 106.76Q20.64 106.04 20.82 105.14Q21 104.24 19.68 103.4Q16.32 101.24 15.66 98.36Q15 95.48 17.16 94.28L26.28 89Q27.48 88.4 27.54 87.5Q27.6 86.6 26.28 85.88Q23.04 83.96 21.42 80.42Q19.8 76.88 19.8 72.68Q19.8 66.2 22.98 60.62Q26.16 55.04 31.5 51.56Q36.84 48.08 43.44 48.08Q46.2 48.08 48.12 48.8Q49.56 49.28 50.28 47.84Q52.32 43.4 55.5 40.82Q58.68 38.24 62.16 38.24Q64.68 38.24 66.06 39.56Q67.44 40.88 67.44 43.16Q67.44 45.44 66.12 46.88Q64.8 48.32 62.76 48.32Q61.2 48.32 60.42 47.72Q59.64 47.12 59.04 46.52Q58.44 45.92 57.12 45.92Q54.48 45.92 52.92 48.92Q52.44 50 52.68 50.9Q52.92 51.8 53.64 52.76Q56.76 56.84 56.76 63.08Q56.76 68.72 54.3 73.82Q51.84 78.92 47.58 82.46Q43.32 86 37.8 87.2Q35.64 87.68 33.9 88.34Q32.16 89 29.52 90.68L24.72 93.56Q22.92 94.64 23.76 96.26Q24.6 97.88 28.44 99.32L38.76 103.16Q45.48 105.56 48.06 109.04Q50.64 112.52 50.64 117.2Q50.64 122.96 46.86 127.16Q43.08 131.36 36.84 133.64Q30.6 135.92 23.16 135.92ZM27.84 74.84Q27.84 80.36 29.46 82.82Q31.08 85.28 34.08 85.28Q37.92 85.28 41.22 81.74Q44.52 78.2 46.56 72.62Q48.6 67.04 48.6 61.04Q48.6 55.04 47.04 52.82Q45.48 50.6 42.36 50.6Q38.64 50.6 35.28 54.14Q31.92 57.68 29.88 63.2Q27.84 68.72 27.84 74.84ZM24.48 132.92Q29.16 132.92 33.24 131.36Q37.32 129.8 39.9 126.92Q42.48 124.04 42.48 120.08Q42.48 116.12 40.5 113.54Q38.52 110.96 32.76 108.8L30.48 107.96Q28.32 107.12 26.16 107.36Q24 107.6 22.08 108.56Q15.6 112.16 13.32 115.28Q11.04 118.4 11.04 122.12Q11.04 126.56 14.28 129.74Q17.52 132.92 24.48 132.92ZM69 111.2Q65.04 111.2 63.36 108.26Q61.68 105.32 63.24 98.6L78.48 33.2Q79.08 31.04 78.54 30.2Q78 29.36 76.32 29.24L72.72 28.88Q70.92 28.76 71.16 27.32Q71.4 26.24 72.84 26Q77.16 25.28 80.52 24.26Q83.88 23.24 85.92 21.56Q86.88 20.84 87.72 20.84Q89.16 20.84 88.8 22.64L71.04 98.72Q70.44 101.36 70.86 102.86Q71.28 104.36 73.08 104.36Q75.24 104.36 77.82 101.18Q80.4 98 83.64 89.12Q84.12 87.56 85.32 87.56Q87.12 87.56 86.28 89.72Q83.76 97.88 80.7 102.62Q77.64 107.36 74.64 109.28Q71.64 111.2 69 111.2ZM107.4 111.08Q99.96 111.08 95.64 104.9Q91.32 98.72 91.32 88.16Q91.32 80.36 93.84 73.16Q96.36 65.96 100.5 60.32Q104.64 54.68 109.74 51.38Q114.84 48.08 120 48.08Q127.44 48.08 131.76 54.2Q136.08 60.32 136.08 71Q136.08 78.8 133.56 86Q131.04 93.2 126.9 98.84Q122.76 104.48 117.66 107.78Q112.56 111.08 107.4 111.08ZM107.16 108.2Q111 108.2 114.66 104.48Q118.32 100.76 121.32 94.64Q124.32 88.52 126.12 81.02Q127.92 73.52 127.92 65.96Q127.92 50.96 120.12 50.96Q116.4 50.96 112.68 54.62Q108.96 58.28 106.02 64.4Q103.08 70.52 101.28 78.02Q99.48 85.52 99.48 93.08Q99.48 108.2 107.16 108.2ZM152.52 111.08Q148.56 111.08 144.18 109.88Q139.8 108.68 137.52 106.88Q136.68 106.16 136.8 104.72L139.44 89Q139.68 87.44 140.88 87.44Q142.2 87.44 142.2 89.12L142.44 94.88Q142.68 101.72 145.74 104.9Q148.8 108.08 153.24 108.08Q157.08 108.08 159.84 105.62Q162.6 103.16 162.6 98.36Q162.6 95.6 161.76 93.26Q160.92 90.92 159.12 88.22Q157.32 85.52 154.2 81.68Q150.12 76.4 148.14 72.62Q146.16 68.84 146.16 64.76Q146.16 57.2 150.9 52.64Q155.64 48.08 162.96 48.08Q166.2 48.08 169.26 49.04Q172.32 50 174.36 51.92Q175.44 52.76 175.08 54.08L171.72 70.16Q171.36 71.72 170.28 71.72Q169.2 71.72 168.96 70.04L168.6 64.28Q168.12 57.08 166.74 53.96Q165.36 50.84 161.04 50.84Q157.2 50.84 154.8 53.48Q152.4 56.12 152.4 59.84Q152.4 63.8 154.56 67.1Q156.72 70.4 160.44 75.44Q165.36 81.92 167.1 85.76Q168.84 89.6 168.84 93.56Q168.84 98.6 166.62 102.56Q164.4 106.52 160.68 108.8Q156.96 111.08 152.52 111.08ZM188.76 111.08Q184.8 111.08 180.42 109.88Q176.04 108.68 173.76 106.88Q172.92 106.16 173.04 104.72L175.68 89Q175.92 87.44 177.12 87.44Q178.44 87.44 178.44 89.12L178.68 94.88Q178.92 101.72 181.98 104.9Q185.04 108.08 189.48 108.08Q193.32 108.08 196.08 105.62Q198.84 103.16 198.84 98.36Q198.84 95.6 198 93.26Q197.16 90.92 195.36 88.22Q193.56 85.52 190.44 81.68Q186.36 76.4 184.38 72.62Q182.4 68.84 182.4 64.76Q182.4 57.2 187.14 52.64Q191.88 48.08 199.2 48.08Q202.44 48.08 205.5 49.04Q208.56 50 210.6 51.92Q211.68 52.76 211.32 54.08L207.96 70.16Q207.6 71.72 206.52 71.72Q205.44 71.72 205.2 70.04L204.84 64.28Q204.36 57.08 202.98 53.96Q201.6 50.84 197.28 50.84Q193.44 50.84 191.04 53.48Q188.64 56.12 188.64 59.84Q188.64 63.8 190.8 67.1Q192.96 70.4 196.68 75.44Q201.6 81.92 203.34 85.76Q205.08 89.6 205.08 93.56Q205.08 98.6 202.86 102.56Q200.64 106.52 196.92 108.8Q193.2 111.08 188.76 111.08Z" fill="#FFFFFF"/> </svg> `;
+      const bar = document.querySelector("#mark svg path");
+      const glyphs = document.querySelectorAll("#mark svg path")[1];
+
+      // ---- Timeline ------------------------------------------------------------------------
+      const tl = gsap.timeline({ paused: true });
+      const page = document.getElementById("page");
+
+      // Page arrives; the Japanese types itself in, right to left, top to bottom.
+      tl.fromTo(page, { y: 120, rotation: 2.5, scale: 0.94, opacity: 0 }, { y: 0, rotation: 0, scale: 1, opacity: 1, duration: 1.1, ease: "expo.out" }, 0.1);
+      cols.forEach((col, c) => tl.fromTo(col, { opacity: 0 }, { opacity: 0.8, duration: 0.25, stagger: 0.018, ease: "none" }, 0.35 + c * 0.04));
+      tl.fromTo(".hd", { scaleY: 0.2, opacity: 0 }, { scaleY: 1, opacity: 0.85, duration: 0.5, stagger: 0.05, ease: "back.out(2)" }, 0.4);
+      tl.fromTo("#kick", { scaleX: 0 }, { scaleX: 1, transformOrigin: "left center", duration: 0.5, ease: "expo.out" }, 0.7);
+      tl.fromTo("#shot", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 0.6);
+      tl.fromTo("#k1", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 0.9);
+      tl.fromTo("#c1", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.7, ease: "expo.out" }, 1.1);
+
+      // The tap.
+      tl.fromTo("#tap", { scale: 0.3, opacity: 0 }, { scale: 1, opacity: 0.9, duration: 0.18, ease: "power2.out" }, 2.2);
+      tl.to("#tap", { scale: 2.4, opacity: 0, duration: 0.6, ease: "power2.out" }, 2.38);
+      tl.to(page, { scale: 0.985, duration: 0.12, ease: "power2.out", yoyo: true, repeat: 1 }, 2.2);
+
+      // Gold leaf sweeps under the box; the box fills with wash.
+      tl.fromTo("#wash", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.out" }, 2.35);
+      tl.fromTo("#leaf", { scaleX: 0 }, { scaleX: 1, duration: 0.8, ease: "expo.out" }, 2.4);
+
+      // The gloss unfurls, English word by word.
+      tl.fromTo("#note", { opacity: 0, y: -24, scale: 0.9 }, { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: "back.out(1.4)" }, 2.75);
+      tl.fromTo("#en .w", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.3, stagger: 0.045, ease: "power2.out" }, 2.95);
+      tl.to("#c1", { opacity: 0, y: -24, duration: 0.45, ease: "power2.in" }, 3.0);
+      tl.fromTo("#c2", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.7, ease: "expo.out" }, 3.35);
+
+      // A slow push while it's read.
+      tl.to(page, { scale: 1.035, duration: 3.0, ease: "sine.inOut" }, 3.2);
+
+      // Now the whole page: the gloss folds away and English fills every box.
+      tl.to("#note", { opacity: 0, y: -12, scale: 0.96, duration: 0.4, ease: "power2.in" }, 6.4);
+      tl.to(["#wash", "#leaf"], { opacity: 0, duration: 0.3 }, 6.5);
+      tl.to("#c2", { opacity: 0, y: -24, duration: 0.45, ease: "power2.in" }, 6.4);
+      tl.fromTo("#c3", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.7, ease: "expo.out" }, 6.8);
+      regions.forEach((m, i) => tl.fromTo(m, { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.6)" }, 6.8 + [0, 1, 2, 3, 4, 5][i] * 0.16));
+      tl.to(page, { scale: 1, duration: 1.2, ease: "power2.inOut" }, 6.4);
+
+      // Exit: the page lifts away and the scene clears for the mark.
+      tl.to("#c3", { opacity: 0, x: -30, duration: 0.5, ease: "power2.in" }, 9.9);
+      tl.to("#k1", { opacity: 0, duration: 0.4 }, 9.9);
+      tl.to(page, { x: 260, y: -40, rotation: -4, scale: 0.86, opacity: 0, duration: 0.9, ease: "power3.in" }, 10.1);
+
+      // The mark: letters rise, then the gold bar draws under "oss".
+      tl.fromTo(glyphs, { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.9, ease: "expo.out" }, 10.8);
+      tl.fromTo(bar, { scaleX: 0, transformOrigin: "0% 50%" }, { scaleX: 1, duration: 0.9, ease: "expo.out" }, 11.35);
+      tl.fromTo("#tag", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }, 11.9);
+      tl.fromTo("#foot", { opacity: 0 }, { opacity: 1, duration: 0.8, ease: "power2.out" }, 12.6);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
