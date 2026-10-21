@@ -57,8 +57,8 @@ class NotEnoughSpace(needed: Long, free: Long) :
     PermanentDownloadError("Not enough space: needs ${formatSize(needed)}, ${formatSize(free)} free")
 
 private fun formatSize(bytes: Long): String =
-    if (bytes >= 1L shl 30) String.format(java.util.Locale.US, "%.1f GB", bytes / (1L shl 30).toDouble())
-    else "${(bytes + (1L shl 20) - 1) shr 20} MB"
+    if (bytes >= 1L shl 30) String.format(java.util.Locale.US, "%.1f\u00A0GB", bytes / (1L shl 30).toDouble())
+    else "${(bytes + (1L shl 20) - 1) shr 20}\u00A0MB"
 
 /** Throws [NotEnoughSpace] unless [dir] can take [bytes] more and still leave the phone some room. */
 internal fun ensureSpace(dir: File?, bytes: Long) {

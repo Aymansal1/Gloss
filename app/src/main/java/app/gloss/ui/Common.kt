@@ -18,11 +18,12 @@ fun ScrollToTopOn(reselect: Flow<Unit>, list: LazyListState) {
     LaunchedEffect(reselect, list) { reselect.collect { list.animateScrollToItem(0) } }
 }
 
+// A no-break space keeps "60 KB" together when a line wraps.
 fun formatBytes(bytes: Long): String = when {
-    bytes >= 1L shl 30 -> String.format(Locale.US, "%.1f GB", bytes / (1L shl 30).toDouble())
-    bytes >= 1L shl 20 -> String.format(Locale.US, "%.0f MB", bytes / (1L shl 20).toDouble())
-    bytes >= 1L shl 10 -> String.format(Locale.US, "%.0f KB", bytes / (1L shl 10).toDouble())
-    else -> "$bytes B"
+    bytes >= 1L shl 30 -> String.format(Locale.US, "%.1f\u00A0GB", bytes / (1L shl 30).toDouble())
+    bytes >= 1L shl 20 -> String.format(Locale.US, "%.0f\u00A0MB", bytes / (1L shl 20).toDouble())
+    bytes >= 1L shl 10 -> String.format(Locale.US, "%.0f\u00A0KB", bytes / (1L shl 10).toDouble())
+    else -> "$bytes\u00A0B"
 }
 
 private val LANGS = mapOf(
