@@ -601,7 +601,8 @@ private fun Scrubber(
             val lift by animateDpAsState(if (on) 0.dp else 6.dp, Motion.press(), label = "lift")
             Row(
                 Modifier
-                    .padding(top = lift)
+                    // An offset, not padding: the springy lift overshoots below zero, and padding can't be negative.
+                    .offset { IntOffset(0, lift.roundToPx()) }
                     .pressable({ onPick(i) }, scaleTo = 0.92f, onClickLabel = "Go to page ${Spreads.label(pages)}")
                     .clip(RoundedCornerShape(4.dp))
                     .then(if (on) Modifier.border(1.5.dp, Brush.linearGradient(GoldLeaf.stops), RoundedCornerShape(4.dp)) else Modifier)
