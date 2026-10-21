@@ -44,6 +44,8 @@ class ReaderTest {
         rule.onNodeWithContentDescription("Page 1").performTouchInput {
             click(Offset(width * 0.27f, height * 0.42f))
         }
+        // A single tap only counts once the double-tap window has passed.
+        rule.mainClock.advanceTimeBy(500)
         rule.shot("reader_2_gloss")
     }
 

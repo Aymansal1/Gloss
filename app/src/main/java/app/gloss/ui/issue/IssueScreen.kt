@@ -173,10 +173,12 @@ fun IssueScreen(id: String, nav: Nav) {
                     }
                     Spacer(Modifier.height(22.dp))
                     Text(name, style = Gloss.type.title1, color = g.text, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 24.dp))
-                    val subtitle = listOf(
-                        prettyDate(item?.date ?: installed?.date.orEmpty()),
-                        item?.issueName ?: installed?.issueName.orEmpty(),
-                    ).filter { it.isNotBlank() }.distinct().joinToString(" · ")
+                    // Many issues are named by their date; don't say it twice.
+                    val date = item?.date ?: installed?.date.orEmpty()
+                    val issueName = (item?.issueName ?: installed?.issueName.orEmpty())
+                        .takeUnless { it == date || prettyDate(it) == prettyDate(date) }.orEmpty()
+                    val subtitle = listOf(prettyDate(date), issueName)
+                        .filter { it.isNotBlank() }.distinct().joinToString(" · ")
                     if (subtitle.isNotBlank()) {
                         Spacer(Modifier.height(4.dp))
                         Text(subtitle, style = Gloss.type.subhead, color = g.secondary, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 24.dp))
