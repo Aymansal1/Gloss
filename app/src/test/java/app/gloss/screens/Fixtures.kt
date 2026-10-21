@@ -28,9 +28,9 @@ import java.util.zip.ZipOutputStream
 object Fixtures {
     const val ID = "famitsu-1994-03"
 
-    private class Box(val top: Int, val left: Int, val bottom: Int, val right: Int, val jp: String, val en: String)
+    internal class Box(val top: Int, val left: Int, val bottom: Int, val right: Int, val jp: String, val en: String)
 
-    private val pages = listOf(
+    private val samplePages = listOf(
         listOf(
             Box(60, 80, 190, 920, "スーパーマリオ３ 攻略特集", "**Super Mario Bros. 3** strategy special"),
             Box(250, 80, 560, 470, "ワールド１から８まで全ステージを完全攻略", "Every stage from World 1 to World 8, fully mapped"),
@@ -56,21 +56,27 @@ object Fixtures {
     fun app(): GlossApp = ApplicationProvider.getApplicationContext()
 
     /** Writes the issue to the library, primes the page images, and makes WorkManager usable. */
-    fun install() {
+    fun install() = install(ID, "Famicom Tsūshin", "1994-03-04", samplePages)
+
+    /**
+     * Writes an issue made of [pages] to the library. Pages after the first few are drawn small,
+     * so a long issue doesn't need hundreds of full-size bitmaps.
+     */
+    internal fun install(id: String, magazine: String, issueName: String, pages: List<List<Box>>) {
         warmUpNativeGraphics()
         val app = app()
         runCatching { WorkManagerTestInitHelper.initializeTestWorkManager(app) }
         val c = app.container
-        val dir = c.library.dirFor(ID).apply { mkdirs() }
+        val dir = c.library.dirFor(id).apply { mkdirs() }
         val issue = InstalledIssue(
-            id = ID, magazineName = "Famicom Tsūshin", issueName = "1994-03-04", date = "1994-03-04",
+            id = id, magazineName = magazine, issueName = issueName, date = "1994-03-04",
             publisher = "ASCII", version = "1.0", coverUrl = "", adult = false,
             installedAt = 0L, dir = dir,
         )
         File(dir, "info.json").writeText(issue.toJson().toString(2))
-        writeZip(File(dir, "data.zip"))
+        writeZip(File(dir, "data.zip"), pages)
         val pdf = File(dir, "scan.pdf").apply { writeText("%PDF-1.4 stand-in for tests") }
-        c.pdf.primeForTests(pdf, pages.mapIndexed { i, boxes -> drawPage(i + 1, boxes) })
+        c.pdf.primeForTests(pdf, pages.mapIndexed { i, boxes -> drawPage(i + 1, boxes, small = i >= 6) })
         runBlocking { c.library.scan() }
     }
 
@@ -85,7 +91,7 @@ object Fixtures {
         bmp.recycle()
     }
 
-    private fun writeZip(zip: File) {
+    private fun writeZip(zip: File, pages: List<List<Box>>) {
         val complete = buildString {
             pages.forEachIndexed { i, boxes ->
                 append("[[PAGE_${"%03d".format(i + 1)}]]\n#GA-TRANSCRIPTION\n")
@@ -109,8 +115,8 @@ object Fixtures {
     }
 
     /** A page that reads as a magazine at a glance: masthead, photos, and columns of text. */
-    private fun drawPage(number: Int, boxes: List<Box>): Bitmap {
-        val w = 1000; val h = 1414
+    private fun drawPage(number: Int, boxes: List<Box>, small: Boolean = false): Bitmap {
+        val w = if (small) 200 else 1000; val h = if (small) 283 else 1414
         val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bmp)
         canvas.drawColor(Color.rgb(246, 241, 230))

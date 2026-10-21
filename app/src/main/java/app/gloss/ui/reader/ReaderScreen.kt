@@ -87,6 +87,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -242,7 +244,11 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
         ImmersiveMode(hidden = !chrome)
 
         val navInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-        val peek = 148.dp + navInset
+        // The peek shows the page bar and thumbnails and stops just below them, measured so a
+        // larger font or thumbnail size never lets the tabs underneath poke into view.
+        val density = LocalDensity.current
+        var peekContent by remember { mutableStateOf(136.dp) }
+        val peek = peekContent + 12.dp + navInset
         val sheetPeek by animateDpAsState(if (chrome) peek else 0.dp, Motion.settle(), label = "peek")
         val isBookmarked = bookmarks.any { it.issueId == id && it.page == currentPage }
 
@@ -264,6 +270,7 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
                         .glass(haze, SheetShape, tint = g.raised)
                         .windowInsetsPadding(WindowInsets.navigationBars),
                 ) {
+                    Column(Modifier.onSizeChanged { peekContent = with(density) { it.height.toDp() } }) {
                     Grabber()
                     PageBar(
                         label = Spreads.label(screen),
@@ -283,7 +290,8 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
                         },
                         onPick = { scope.launch { pager.animateScrollToPage(it) } },
                     )
-                    Spacer(Modifier.height(14.dp))
+                    }
+                    Spacer(Modifier.height(20.dp))
                     Box(Modifier.padding(horizontal = 16.dp)) {
                         SegmentedControl(SheetTab.entries.map { it.label }, tab, { tab = it })
                     }

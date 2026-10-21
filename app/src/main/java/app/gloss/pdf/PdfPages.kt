@@ -115,8 +115,9 @@ class PdfPages(context: Context) {
      */
     internal fun primeForTests(file: File, pages: List<Bitmap>) {
         aspects[file.path] = FloatArray(pages.size) { pages[it].width.toFloat() / pages[it].height }
-        pages.forEachIndexed { i, bmp ->
-            listOf(160, 480, 1080, 1440, 2160, 2880).forEach { w -> cache.put(key(file, i, w), bmp) }
+        // Last page first, so the opening pages are the freshest if a long issue fills the cache.
+        for (i in pages.indices.reversed()) {
+            listOf(160, 480, 1080, 1440, 2160, 2880).forEach { w -> cache.put(key(file, i, w), pages[i]) }
         }
     }
 
