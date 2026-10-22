@@ -4,6 +4,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -56,6 +58,7 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(nav: Nav) {
     val c = container()
@@ -197,7 +200,11 @@ fun SettingsScreen(nav: Nav) {
                     style = Gloss.type.footnote, color = g.secondary, textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(6.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                // Wraps onto a second line when the three don't fit, rather than squeezing one.
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(18.dp, Alignment.CenterHorizontally),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
                     LinkText("Website") { uri.openUri("https://aymansal1.github.io/Gloss/") }
                     LinkText("Gaming Alexandria") { uri.openUri("https://www.gamingalexandria.com") }
                     LinkText("Source code") { uri.openUri("https://github.com/Aymansal1/Gloss") }
