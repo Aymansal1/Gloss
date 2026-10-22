@@ -1,15 +1,18 @@
 package app.gloss.screens
 
 import android.graphics.Bitmap
-import android.graphics.BitmapShader
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.Matrix
+import android.graphics.ColorSpace
+import android.graphics.HardwareRenderer
 import android.graphics.Paint
+import android.graphics.PixelFormat
 import android.graphics.Path
 import android.graphics.RectF
+import android.graphics.RenderNode
 import android.graphics.RuntimeShader
-import android.graphics.Shader
+import android.hardware.HardwareBuffer
+import android.media.ImageReader
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.gloss.ui.components.LiquidLens
 import org.junit.Assume.assumeTrue
@@ -42,8 +45,8 @@ class LiquidLensTest {
     }
 
     /**
-     * The lens on its own (no blur or tint from the real pipeline): a capsule and a circle over
-     * coloured stripes and big type, so the bend at the rim and the colour split are visible.
+     * The real effect chain (blur, lens, saturation) drawn by the GPU pipeline over coloured
+     * stripes and big type, with the tint and rim on top, so the bend at the rim shows.
      */
     @Test fun lensBendsTheRim() {
         val w = 1080
@@ -56,30 +59,42 @@ class LiquidLensTest {
             while (x < w) { drawRect(x, 0f, x + 36f, h.toFloat(), Paint().apply { color = stripes[i++ % stripes.size] }); x += 36f }
             drawText("GLOSS 1994", 40f, 300f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; textSize = 210f; isFakeBoldText = true })
         }
-        val out = scene.copy(Bitmap.Config.ARGB_8888, true)
-        val canvas = Canvas(out)
-        fun pane(left: Float, top: Float, pw: Float, ph: Float) {
+        val root = RenderNode("root").apply { setPosition(0, 0, w, h) }
+        val canvas = root.beginRecording()
+        canvas.drawBitmap(scene, 0f, 0f, null)
+        fun pane(left: Int, top: Int, pw: Int, ph: Int) {
+            val r = minOf(pw, ph) / 2f
             val shader = RuntimeShader(source)
-            shader.setFloatUniform("size", pw, ph)
-            shader.setFloatUniform("radius", minOf(pw, ph) / 2f)
-            shader.setFloatUniform("depth", minOf(48f, minOf(pw, ph) / 2f))
+            shader.setFloatUniform("size", pw.toFloat(), ph.toFloat())
+            shader.setFloatUniform("radius", r)
+            shader.setFloatUniform("depth", minOf(48f, r))
             shader.setFloatUniform("bend", 42f)
             shader.setFloatUniform("spread", 0.12f)
-            shader.setInputShader("content", BitmapShader(scene, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply {
-                setLocalMatrix(Matrix().apply { setTranslate(-left, -top) })
-            })
-            val clip = Path().apply { addRoundRect(RectF(0f, 0f, pw, ph), minOf(pw, ph) / 2f, minOf(pw, ph) / 2f, Path.Direction.CW) }
+            val node = RenderNode("pane").apply {
+                setPosition(left, top, left + pw, top + ph)
+                setRenderEffect(LiquidLens.effect(shader, 8f))
+            }
+            node.beginRecording().apply { translate(-left.toFloat(), -top.toFloat()); drawBitmap(scene, 0f, 0f, null) }
+            node.endRecording()
+            val clip = Path().apply { addRoundRect(RectF(left.toFloat(), top.toFloat(), (left + pw).toFloat(), (top + ph).toFloat()), r, r, Path.Direction.CW) }
             canvas.save()
-            canvas.translate(left, top)
             canvas.clipPath(clip)
-            canvas.drawRect(0f, 0f, pw, ph, Paint().apply { this.shader = shader })
-            canvas.drawPath(clip, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(70, 255, 255, 255) })
-            canvas.drawPath(clip, Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 6f; color = Color.argb(200, 255, 255, 255) })
+            canvas.drawRenderNode(node)
+            canvas.drawPath(clip, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(110, 255, 255, 255) })
+            canvas.drawPath(clip, Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 6f; color = Color.argb(220, 255, 255, 255) })
             canvas.restore()
         }
-        pane(40f, 40f, 760f, 186f)
-        pane(840f, 40f, 186f, 186f)
-        pane(40f, 260f, 1000f, 130f)
+        pane(40, 40, 760, 186)
+        pane(840, 40, 186, 186)
+        pane(40, 260, 1000, 130)
+        root.endRecording()
+
+        val reader = ImageReader.newInstance(w, h, PixelFormat.RGBA_8888, 1, HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE or HardwareBuffer.USAGE_GPU_COLOR_OUTPUT)
+        val renderer = HardwareRenderer().apply { setSurface(reader.surface); setContentRoot(root) }
+        renderer.createRenderRequest().setWaitForPresent(true).syncAndDraw()
+        val image = reader.acquireNextImage()
+        val out = Bitmap.wrapHardwareBuffer(image.hardwareBuffer!!, ColorSpace.get(ColorSpace.Named.SRGB))!!.copy(Bitmap.Config.ARGB_8888, false)
+        image.close(); renderer.destroy(); reader.close()
         File("build/outputs/roborazzi").apply { mkdirs() }.resolve("liquid_lens.png").outputStream().use { out.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 }
