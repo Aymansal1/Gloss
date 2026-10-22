@@ -198,6 +198,7 @@ fun SettingsScreen(nav: Nav) {
                 )
                 Spacer(Modifier.height(6.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                    LinkText("Website") { uri.openUri("https://aymansal1.github.io/Gloss/") }
                     LinkText("Gaming Alexandria") { uri.openUri("https://www.gamingalexandria.com") }
                     LinkText("Source code") { uri.openUri("https://github.com/Aymansal1/Gloss") }
                 }

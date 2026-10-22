@@ -9,7 +9,7 @@
 ![Android 13+](https://img.shields.io/badge/Android-13%2B-2338C2?labelColor=141E78)
 ![License](https://img.shields.io/badge/license-AGPL--3.0-2338C2?labelColor=141E78)
 
-**[▶ Watch the 16-second tour](docs/brand/video/gloss-promo.mp4)**
+**[🌐 gloss website](https://aymansal1.github.io/Gloss/)** &nbsp;·&nbsp; **[▶ Watch the 16-second tour](docs/brand/video/gloss-promo.mp4)**
 
 **[Install](#install)** &nbsp;·&nbsp; **[Reading](#reading)** &nbsp;·&nbsp; **[Search](#search)** &nbsp;·&nbsp; **[How it works](#how-it-works)** &nbsp;·&nbsp; **[Building](#building)**
 
