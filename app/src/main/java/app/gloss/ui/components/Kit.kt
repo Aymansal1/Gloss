@@ -49,6 +49,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
@@ -215,7 +216,8 @@ fun SegmentedControl(
                 .fillMaxHeight()
                 .shadow(3.dp, RoundedCornerShape(8.dp), clip = false, ambientColor = Color.Black.copy(alpha = 0.12f))
                 .clip(RoundedCornerShape(8.dp))
-                .background(if (c.isDark) c.tertiary.copy(alpha = 0.55f) else c.surface),
+                // Opaque, so the shadow underneath doesn't show through the thumb.
+                .background(if (c.isDark) c.tertiary.copy(alpha = 0.55f).compositeOver(c.fill) else c.surface),
         )
         Row(Modifier.fillMaxWidth().fillMaxHeight()) {
             options.forEachIndexed { i, label ->

@@ -3,6 +3,7 @@ package app.gloss.ui.components
 import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
@@ -15,6 +16,7 @@ import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
 import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.effects.vibrancy
+import com.kyant.backdrop.shadow.Shadow
 import dev.chrisbanes.haze.HazeState
 
 /** What liquid glass looks through: the screen behind the floating controls. */
@@ -37,6 +39,7 @@ fun Modifier.glassSource(backdrop: GlassBackdrop): Modifier =
  * Liquid glass, iOS 26 style, drawn by Kyant's Backdrop library: the picture behind is blurred,
  * made more vivid and bent by a lens towards the rim, under a tint that keeps labels readable
  * and a highlight along the edge. [bend] is how wide the bent band is; small buttons use less.
+ * [lifted] adds a soft shadow under controls that float over the content.
  *
  * Where the effect can't run, the frosted [glass] over [fallback] stands in.
  */
@@ -48,8 +51,12 @@ fun Modifier.liquidGlass(
     tint: Color = Gloss.colors.surface,
     bend: Dp = 24.dp,
     frost: Dp = 8.dp,
+    lifted: Boolean = false,
 ): Modifier {
-    if (!liquidSupported) return glass(fallback, shape, tint)
+    if (!liquidSupported) {
+        val base = if (lifted) shadow(18.dp, shape, clip = false, ambientColor = Color.Black.copy(alpha = 0.18f), spotColor = Color.Black.copy(alpha = 0.22f)) else this
+        return base.glass(fallback, shape, tint)
+    }
     val surface = tint.copy(alpha = if (Gloss.colors.isDark) 0.5f else 0.55f)
     return drawBackdrop(
         backdrop = backdrop,
@@ -59,7 +66,8 @@ fun Modifier.liquidGlass(
             blur(frost.toPx())
             lens(bend.toPx(), bend.toPx())
         },
-        shadow = null,
+        // Backdrop's own shadow stays outside the shape, so it can't darken the glass.
+        shadow = if (lifted) ({ Shadow(radius = 18.dp, color = Color.Black.copy(alpha = 0.2f)) }) else null,
         onDrawSurface = { drawRect(surface) },
     )
 }

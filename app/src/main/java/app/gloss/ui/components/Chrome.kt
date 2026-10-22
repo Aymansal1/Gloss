@@ -261,8 +261,7 @@ fun GlassTabBar(
             Modifier
                 .weight(1f)
                 .height(TabBarHeight)
-                .shadow(18.dp, CircleShape, clip = false, ambientColor = Color.Black.copy(alpha = 0.18f), spotColor = Color.Black.copy(alpha = 0.22f))
-                .liquidGlass(backdrop, haze, CircleShape)
+                .liquidGlass(backdrop, haze, CircleShape, lifted = true)
                 .padding(4.dp),
         ) {
             val w = maxWidth / tabs.size
@@ -303,8 +302,7 @@ fun GlassTabBar(
         Box(
             Modifier
                 .size(TabBarHeight)
-                .shadow(18.dp, CircleShape, clip = false, ambientColor = Color.Black.copy(alpha = 0.18f), spotColor = Color.Black.copy(alpha = 0.22f))
-                .liquidGlass(backdrop, haze, CircleShape)
+                .liquidGlass(backdrop, haze, CircleShape, lifted = true)
                 .background(searchBg)
                 .pressable(onSearch, scaleTo = 0.88f, haptic = !searchSelected, role = Role.Tab)
                 .semantics { contentDescription = search.label; this.selected = searchSelected },

@@ -22,7 +22,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.em
@@ -128,17 +127,24 @@ object Pigment {
     fun on(pigment: Color): Color = if (pigment.luminance() > 0.45f) Color(0xFF14110A) else Color.White
 }
 
-private fun inter(weight: Int, opsz: Float) = Font(
-    R.font.inter_variable,
-    weight = FontWeight(weight),
-    variationSettings = FontVariation.Settings(FontVariation.weight(weight), FontVariation.Setting("opsz", opsz)),
-)
+// Inter as fixed instances cut from the variable font (Latin, Greek, Cyrillic and symbols),
+// one file per weight and optical size. Newer Compose applies FontWeight on top of a variable
+// font's own wght setting on some phones, which drew everything a step too bold.
 
 /** Inter at text optical size, for everything 17sp and under. */
-val InterText = FontFamily(inter(400, 14f), inter(500, 14f), inter(600, 14f), inter(700, 14f))
+val InterText = FontFamily(
+    Font(R.font.inter_text_400, FontWeight(400)),
+    Font(R.font.inter_text_500, FontWeight(500)),
+    Font(R.font.inter_text_600, FontWeight(600)),
+    Font(R.font.inter_text_700, FontWeight(700)),
+)
 
 /** Inter at display optical size, for large titles. */
-val InterDisplay = FontFamily(inter(600, 32f), inter(700, 32f), inter(800, 32f))
+val InterDisplay = FontFamily(
+    Font(R.font.inter_display_600, FontWeight(600)),
+    Font(R.font.inter_display_700, FontWeight(700)),
+    Font(R.font.inter_display_800, FontWeight(800)),
+)
 
 /** The scribe's hand: glosses, page numbers and the wordmark. */
 val Scribe = FontFamily(
