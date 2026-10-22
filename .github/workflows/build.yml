@@ -57,6 +57,11 @@ jobs:
               r = ET.parse(path).getroot()
               t += int(r.get("tests", 0)); f += int(r.get("failures", 0))
               e += int(r.get("errors", 0)); s += int(r.get("skipped", 0))
+              # Each failure as its own annotation, so it shows on the run's summary page.
+              for case in r.iter("testcase"):
+                  for bad in list(case.iter("failure")) + list(case.iter("error")):
+                      msg = (bad.get("message") or bad.text or "").strip().splitlines()[0][:400]
+                      print(f"::error title={case.get('classname', '').split('.')[-1]}.{case.get('name')}::{msg}")
           level = "error" if (f or e or t == 0) else "notice"
           print(f"::{level} title=Unit tests::{t} run, {f} failed, {e} errors, {s} skipped")
           PY
