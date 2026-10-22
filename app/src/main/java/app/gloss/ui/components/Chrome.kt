@@ -45,10 +45,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -74,6 +77,7 @@ import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.materials.CupertinoMaterials
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
+import kotlinx.coroutines.delay
 
 /** Space the floating tab bar takes at the bottom of the home tabs (0 elsewhere). */
 val LocalBottomBarPadding = compositionLocalOf { 0.dp }
@@ -82,16 +86,23 @@ val LocalBottomBarPadding = compositionLocalOf { 0.dp }
 val LocalSharedScope = staticCompositionLocalOf<SharedTransitionScope?> { null }
 val LocalNavScope = staticCompositionLocalOf<AnimatedVisibilityScope?> { null }
 
+private const val HOLD_MS = 240L
+
 /**
  * Provides [scope] as the destination's [AnimatedVisibilityScope] for shared covers.
  *
- * Touches are held while the screen is pushing or popping, as on iOS. Scrolling a list under a
+ * Touches are held for the first moment of a push or pop. Scrolling a list under a
  * cover that's flying back into it moved its landing spot every frame, so the cover bounced
  * around and drew over the header.
  */
 @Composable
 fun ProvideNavScope(scope: AnimatedVisibilityScope, content: @Composable () -> Unit) {
-    val moving = scope.transition.isRunning
+    val running = scope.transition.isRunning
+    // Only the first stretch: by then the cover is nearly home, and holding through the
+    // spring's long tail made the list feel stuck after going back.
+    var expired by remember(running) { mutableStateOf(false) }
+    if (running) LaunchedEffect(Unit) { delay(HOLD_MS); expired = true }
+    val moving = running && !expired
     CompositionLocalProvider(LocalNavScope provides scope) {
         Box(
             Modifier.fillMaxSize().then(
