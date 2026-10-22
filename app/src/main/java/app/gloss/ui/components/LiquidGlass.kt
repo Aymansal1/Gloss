@@ -59,8 +59,9 @@ fun Modifier.glassSource(backdrop: GlassBackdrop): Modifier = this
     }
 
 /**
- * Liquid glass, iOS 26 style: the picture behind is lightly blurred and made more vivid, and
- * near the rim it bends as if through a thick, rounded pane, with the colours splitting a little
+ * Liquid glass, iOS 26's regular variant: the picture behind is frosted enough that labels
+ * always read and made a little more vivid, and in a thin band at the rim it bends as if
+ * through a thick, rounded pane, with the colours splitting a little
  * where it bends most. A bright edge catches the light from the top left.
  *
  * Phones that can't run the shader, and the JVM screenshot tests, get the frosted [glass] over
@@ -77,7 +78,7 @@ fun Modifier.liquidGlass(
         ?: return glass(fallback, shape, tint)
     val c = Gloss.colors
     var position by remember { mutableStateOf(Offset.Zero) }
-    val fill = tint.copy(alpha = if (c.isDark) 0.42f else 0.5f)
+    val fill = tint.copy(alpha = if (c.isDark) 0.6f else 0.62f)
     val rimHi = Color.White.copy(alpha = if (c.isDark) 0.38f else 0.9f)
     val rimLo = Color.White.copy(alpha = if (c.isDark) 0.08f else 0.3f)
 
@@ -91,10 +92,10 @@ fun Modifier.liquidGlass(
             val pane = obtainGraphicsLayer()
             shader.setFloatUniform("size", size.width, size.height)
             shader.setFloatUniform("radius", radius)
-            shader.setFloatUniform("depth", minOf(16.dp.toPx(), size.minDimension / 2f))
-            shader.setFloatUniform("bend", 14.dp.toPx())
-            shader.setFloatUniform("spread", 0.12f)
-            pane.renderEffect = LiquidLens.effect(shader, 3.dp.toPx()).asComposeRenderEffect()
+            shader.setFloatUniform("depth", minOf(9.dp.toPx(), size.minDimension / 4f))
+            shader.setFloatUniform("bend", 5.dp.toPx())
+            shader.setFloatUniform("spread", 0.05f)
+            pane.renderEffect = LiquidLens.effect(shader, 12.dp.toPx()).asComposeRenderEffect()
             val rim = Brush.linearGradient(
                 0f to rimHi, 0.35f to rimLo, 0.65f to rimLo, 1f to rimHi.copy(alpha = rimHi.alpha * 0.45f),
                 start = Offset.Zero, end = Offset(size.width, size.height),
@@ -124,7 +125,7 @@ internal object LiquidLens {
     fun effect(shader: RuntimeShader, blur: Float): RenderEffect {
         val soft = RenderEffect.createBlurEffect(blur, blur, Shader.TileMode.CLAMP)
         val bent = RenderEffect.createChainEffect(RenderEffect.createRuntimeShaderEffect(shader, "content"), soft)
-        val vivid = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(1.5f) })
+        val vivid = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(1.35f) })
         return RenderEffect.createChainEffect(RenderEffect.createColorFilterEffect(vivid), bent)
     }
 
