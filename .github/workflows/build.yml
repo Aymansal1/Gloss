@@ -141,8 +141,14 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && env.GLOSS_KEYSTORE != ''
         env:
           GH_TOKEN: ${{ github.token }}
+        # GitHub sometimes refuses the first try with a 403, so give it a few.
         run: |
-          gh release create "v1.0.${GITHUB_RUN_NUMBER}" out/*.apk \
-            --title "Gloss 1.0.${GITHUB_RUN_NUMBER}" \
-            --notes "Built from ${GITHUB_SHA::7}: $(git log -1 --format=%s)" \
-            --target "$GITHUB_SHA"
+          for wait in 0 20 60 120; do
+            sleep "$wait"
+            gh release create "v1.0.${GITHUB_RUN_NUMBER}" out/*.apk \
+              --title "Gloss 1.0.${GITHUB_RUN_NUMBER}" \
+              --notes "Built from ${GITHUB_SHA::7}: $(git log -1 --format=%s)" \
+              --target "$GITHUB_SHA" && exit 0
+            gh release delete "v1.0.${GITHUB_RUN_NUMBER}" --yes --cleanup-tag 2>/dev/null || true
+          done
+          exit 1
