@@ -6,6 +6,10 @@ import app.gloss.data.LibraryStore
 import app.gloss.data.ReadingState
 import app.gloss.download.DownloadCenter
 import app.gloss.download.SourceFetcher
+import app.gloss.learn.Japanese
+import app.gloss.learn.Speaker
+import app.gloss.learn.Wikipedia
+import app.gloss.learn.WordBook
 import app.gloss.pdf.PdfPages
 import app.gloss.search.SearchIndex
 import app.gloss.update.UpdateChecker
@@ -40,6 +44,10 @@ class AppContainer(app: Application) {
     val fetcher = SourceFetcher(http)
     val pdf = PdfPages(app)
     val updates = UpdateChecker(http, BuildConfig.VERSION_NAME)
+    val japanese = Japanese(app)
+    val words = WordBook(File(app.filesDir, "words.json"))
+    val speaker = Speaker(app)
+    val wikipedia = Wikipedia(http, File(app.filesDir, "wikipedia.json"))
 }
 
 class GlossApp : Application(), SingletonImageLoader.Factory {

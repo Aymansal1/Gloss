@@ -12,3 +12,6 @@ captures/
 # Local tooling
 __pycache__/
 .impeccable/
+
+# Built by tools/japanese_pack.py (CI makes it before building)
+app/src/main/assets/japanese.db

@@ -1,5 +1,9 @@
 package app.gloss.ui.reader
 
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.rounded.School
+import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.shape.CircleShape
 import android.graphics.Bitmap
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
@@ -118,6 +122,7 @@ fun ScanPage(
     onZoomChanged: (Boolean) -> Unit,
     onOpenGloss: () -> Unit,
     modifier: Modifier = Modifier,
+    onLearn: (() -> Unit)? = null,
 ) {
     val c = container()
     BoxWithConstraints(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -271,6 +276,7 @@ fun ScanPage(
                 textScale = textScale,
                 appear = reveal.value,
                 onOpen = onOpenGloss,
+                onLearn = onLearn,
             )
         }
     }
@@ -319,6 +325,7 @@ private fun GlossCallout(
     textScale: Float,
     appear: Float,
     onOpen: () -> Unit,
+    onLearn: (() -> Unit)?,
 ) {
     val density = LocalDensity.current
     val g = Gloss.colors
@@ -364,7 +371,22 @@ private fun GlossCallout(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.width(18.dp).height(2.dp).background(Brush.horizontalGradient(GoldLeaf.stops), RoundedCornerShape(1.dp)))
                     Spacer(Modifier.width(8.dp))
-                    Text("Whole page", style = Gloss.type.footnote.copy(fontWeight = FontWeight(600)), color = GoldLeaf.Hi)
+                    Text("Whole page", style = Gloss.type.footnote.copy(fontWeight = FontWeight(600)), color = GoldLeaf.Hi, modifier = Modifier.weight(1f))
+                    // Learning lives one tap further in, so the card stays a plain translation.
+                    if (onLearn != null && note.original.isNotEmpty()) {
+                        Row(
+                            Modifier
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.12f))
+                                .pressable(onLearn, scaleTo = 0.92f, onClickLabel = "Learn the Japanese in this box")
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(Icons.Rounded.School, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Learn", style = Gloss.type.footnote.copy(fontWeight = FontWeight(600)), color = Color.White)
+                        }
+                    }
                 }
             }
         },
