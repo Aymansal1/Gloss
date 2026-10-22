@@ -77,13 +77,12 @@ import app.gloss.download.DownloadProgress
 import app.gloss.ui.components.Cell
 import app.gloss.ui.components.CoverInfo
 import app.gloss.ui.components.CoverSharing
-import app.gloss.ui.components.IssueCover
 import app.gloss.ui.components.LargeTitleScreen
 import app.gloss.ui.components.PillButton
+import app.gloss.ui.components.SpinnableBook
 import app.gloss.ui.components.PillStyle
 import app.gloss.ui.components.RoundIconButton
 import app.gloss.ui.components.Section
-import app.gloss.ui.components.coverShadow
 import app.gloss.ui.components.pressable
 import app.gloss.ui.container
 import app.gloss.ui.formatBytes
@@ -172,7 +171,12 @@ fun IssueScreen(id: String, nav: Nav) {
             titleContent = {
                 Column(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     if (info != null) {
-                        IssueCover(info, Modifier.width(188.dp).coverShadow(), shared = CoverSharing.Destination)
+                        SpinnableBook(
+                            info,
+                            Modifier.width(188.dp),
+                            publisher = item?.publisher ?: installed?.publisher.orEmpty(),
+                            shared = CoverSharing.Destination,
+                        )
                     }
                     Spacer(Modifier.height(22.dp))
                     Text(name, style = Gloss.type.title1, color = g.text, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 24.dp))

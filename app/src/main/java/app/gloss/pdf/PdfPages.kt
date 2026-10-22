@@ -164,6 +164,19 @@ class PdfPages(context: Context) {
         }.getOrNull()
     }
 
+    /** The last page as a small JPEG beside the issue, for the back of the 3D book. */
+    suspend fun ensureBackCover(pdf: File, out: File): File? = withContext(Dispatchers.IO) {
+        if (out.exists() && out.lastModified() >= pdf.lastModified()) return@withContext out
+        if (!pdf.exists()) return@withContext null
+        val last = (pageCount(pdf).takeIf { it > 0 } ?: runCatching { aspects(pdf).size }.getOrDefault(0)) - 1
+        if (last < 1) return@withContext null
+        val bmp = render(pdf, last, 480) ?: return@withContext null
+        runCatching {
+            FileOutputStream(out).use { bmp.compress(Bitmap.CompressFormat.JPEG, 85, it) }
+            out
+        }.getOrNull()
+    }
+
     private fun bucket(w: Int): Int = when {
         w <= 160 -> 160 // page thumbnails
         w <= 480 -> 480
