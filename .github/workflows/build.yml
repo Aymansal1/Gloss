@@ -42,6 +42,26 @@ jobs:
           git commit -m "build: add Gradle wrapper (8.14.3)"
           git push
 
+      # The Learn dictionary is built from JMdict/KANJIDIC2 (jamdict-data on PyPI) and KanjiVG,
+      # then bundled as an asset. Cached by the builder's hash, so most runs skip it.
+      - name: Cache Japanese dictionary
+        id: dict
+        uses: actions/cache@v4
+        with:
+          path: app/src/main/assets/japanese.db
+          key: japanese-db-${{ hashFiles('tools/japanese_pack.py') }}
+
+      - name: Build Japanese dictionary
+        if: steps.dict.outputs.cache-hit != 'true'
+        run: |
+          work="$RUNNER_TEMP/dict" && mkdir -p "$work"
+          pip download --no-deps --no-binary :all: jamdict-data==1.5 -d "$work" -q
+          tar xzf "$work"/jamdict_data-1.5.tar.gz -C "$work"
+          xz -d "$work"/jamdict_data-1.5/jamdict_data/jamdict.db.xz
+          git clone -q --depth 1 https://github.com/KanjiVG/kanjivg "$work/kanjivg"
+          mkdir -p app/src/main/assets
+          python3 tools/japanese_pack.py "$work"/jamdict_data-1.5/jamdict_data/jamdict.db "$work/kanjivg" app/src/main/assets/japanese.db
+
       - name: Unit tests
         run: |
           set -o pipefail

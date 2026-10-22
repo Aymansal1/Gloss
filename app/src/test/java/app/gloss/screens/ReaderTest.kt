@@ -49,6 +49,21 @@ class ReaderTest {
         rule.shot("reader_2_gloss")
     }
 
+    @Test fun learnsFromAGloss() {
+        open()
+        rule.onNodeWithContentDescription("Page 1").performTouchInput {
+            click(Offset(width * 0.27f, height * 0.42f))
+        }
+        rule.mainClock.advanceTimeBy(500)
+        rule.onAllNodesWithText("Learn")[0].performClick()
+        // The first open unpacks the dictionary, which takes a moment.
+        rule.waitUntil(60_000) { rule.onAllNodesWithText("In this passage").isPresent() }
+        rule.shot("reader_9_learn")
+        rule.onAllNodesWithText("ステージ")[0].performClick()
+        rule.waitForIdle()
+        rule.shot("reader_10_word")
+    }
+
     @Test fun setsTheEnglishOnThePage() {
         open()
         rule.onNodeWithContentDescription("Set the English on the page").performClick()

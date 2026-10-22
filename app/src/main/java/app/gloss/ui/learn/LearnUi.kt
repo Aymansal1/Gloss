@@ -453,7 +453,7 @@ fun SpeakButton(text: String, label: String) {
                 androidx.compose.material3.TextButton(onClick = {
                     asked = false
                     try { ctx.startActivity(Intent("com.android.settings.TTS_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-                    catch (_: ActivityNotFoundException) { ctx.startActivity(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                    catch (e: ActivityNotFoundException) { ctx.startActivity(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
                 }) { Text("Open settings") }
             },
             dismissButton = { androidx.compose.material3.TextButton(onClick = { asked = false }) { Text("Not now") } },

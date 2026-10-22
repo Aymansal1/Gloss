@@ -29,11 +29,11 @@ import app.gloss.ui.theme.GoldLeaf
  */
 object WhatsNew {
     val notes = listOf(
-        "Tap a glossed box again to put its translation away.",
-        "The tab bar, Search and the reader's buttons are liquid glass now: the page behind bends at their edges, like iOS 26.",
-        "Issues are real 3D books now, with a spine, page edges and a back cover. Drag one sideways to spin it, or switch back to the flat cover with 2D under it. Downloaded issues show their real back page.",
-        "Hold a cover for quick actions: read, download, see details, or remove it from your phone.",
-        "Scrolling right after going back no longer sends covers drifting around the screen.",
+        "Learn Japanese as you read: tap Learn on a translation to see each word's reading, meaning and voice, and star the ones to keep.",
+        "A new Learn tab keeps your saved words, exports them for Anki, and explains the magazines' gamer slang.",
+        "The reader's bottom bar is one slim row with a page slider, and the controls tuck away as you turn pages.",
+        "Discover looks back at what came out this week in gaming history, and magazine pages carry a note from Wikipedia.",
+        "Downloaded issues show how hard their Japanese is, and wide screens get two-page spreads upright too.",
     )
 
     private const val PREFS = "whats-new"

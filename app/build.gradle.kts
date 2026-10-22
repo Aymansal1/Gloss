@@ -73,6 +73,8 @@ kotlin {
 
 dependencies {
     implementation(platform(libs.compose.bom))
+    // Installs the Compose libraries' baseline profiles on sideloaded installs, for a quicker start.
+    implementation(libs.profileinstaller)
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.graphics)
     implementation(libs.compose.ui.tooling.preview)
