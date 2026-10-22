@@ -33,6 +33,13 @@ import androidx.compose.material.icons.rounded.CollectionsBookmark
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.outlined.AutoStories
 import androidx.compose.material.icons.outlined.CollectionsBookmark
+import androidx.compose.material.icons.outlined.School
+import androidx.compose.material.icons.rounded.School
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideOutVertically
+import app.gloss.ui.intro.Intro
+import app.gloss.ui.intro.IntroScreen
+import app.gloss.ui.learn.LearnScreen
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -94,17 +101,27 @@ class MainActivity : ComponentActivity() {
             }
             var crash by remember { mutableStateOf<String?>(null) }
             var whatsNew by remember { mutableStateOf(false) }
+            // Decided before the first frame, so a first launch never flashes the home screen.
+            remember { Intro.check(applicationContext) }
+            val intro by Intro.showing.collectAsState()
             LaunchedEffect(Unit) {
                 crash = withContext(Dispatchers.IO) { CrashLog.pending(applicationContext) }
                 whatsNew = withContext(Dispatchers.IO) { WhatsNew.pending(applicationContext) }
             }
             GlossTheme(dark = dark) {
                 AppNav()
+                AnimatedVisibility(
+                    intro,
+                    enter = fadeIn(tween(200)),
+                    exit = fadeOut(tween(260)) + slideOutVertically(Motion.offset()) { it / 3 },
+                ) {
+                    IntroScreen(onDone = { Intro.dismiss(applicationContext) })
+                }
                 crash?.let { report ->
                     CrashReportDialog(report, onDismiss = { CrashLog.clear(applicationContext); crash = null })
                 }
-                // After any crash report, so the two never stack.
-                if (whatsNew && crash == null) WhatsNewDialog(onDismiss = { whatsNew = false })
+                // After any crash report and the welcome, so they never stack.
+                if (whatsNew && crash == null && !intro) WhatsNewDialog(onDismiss = { whatsNew = false })
             }
         }
     }
@@ -187,7 +204,8 @@ private fun AppNav() {
 
 private const val DISCOVER = 0
 private const val LIBRARY = 1
-private const val SEARCH = 2
+private const val LEARN = 2
+private const val SEARCH = 3
 
 @Composable
 private fun Home(nav: Nav) {
@@ -195,7 +213,7 @@ private fun Home(nav: Nav) {
     // Each tab keeps its own scroll position and filters while you switch between them.
     val tabStates = rememberSaveableStateHolder()
     // Tapping the tab you're already on scrolls it back to the top.
-    val reselect = remember { List(3) { MutableSharedFlow<Unit>(extraBufferCapacity = 1) } }
+    val reselect = remember { List(4) { MutableSharedFlow<Unit>(extraBufferCapacity = 1) } }
     // Back from Library or Search returns to Discover before leaving the app.
     BackHandler(enabled = tab != DISCOVER) { tab = DISCOVER }
     val haze = remember { HazeState() }
@@ -204,6 +222,7 @@ private fun Home(nav: Nav) {
         listOf(
             TabItem("Discover", Icons.Outlined.AutoStories, Icons.Rounded.AutoStories),
             TabItem("Library", Icons.Outlined.CollectionsBookmark, Icons.Rounded.CollectionsBookmark),
+            TabItem("Learn", Icons.Outlined.School, Icons.Rounded.School),
         )
     }
 
@@ -219,6 +238,7 @@ private fun Home(nav: Nav) {
                         when (t) {
                             DISCOVER -> DiscoverScreen(nav, reselect[DISCOVER])
                             LIBRARY -> LibraryScreen(nav, reselect[LIBRARY])
+                            LEARN -> LearnScreen(nav, reselect[LEARN])
                             else -> SearchScreen(nav, reselect[SEARCH])
                         }
                     }

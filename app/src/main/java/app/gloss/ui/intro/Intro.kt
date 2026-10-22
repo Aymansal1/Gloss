@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DownloadForOffline
+import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.TouchApp
 import androidx.compose.material3.Icon
@@ -140,18 +141,21 @@ fun IntroScreen(onDone: () -> Unit, animate: Boolean = !motionOff(LocalContext.c
                 Feature(Icons.Rounded.TouchApp, "Tap to translate",
                     "Tap any text on a scan and its English appears right beside it, on the page.",
                     Modifier.rise(3, animate))
+                Feature(Icons.Rounded.School, "Learn as you read",
+                    "Tap Learn on a translation for each word's reading, meaning and voice. Star the ones to keep.",
+                    Modifier.rise(4, animate))
                 Feature(Icons.Rounded.DownloadForOffline, "Read offline",
                     "Download an issue once and read it anywhere, no connection needed.",
-                    Modifier.rise(4, animate))
+                    Modifier.rise(5, animate))
                 Feature(Icons.Rounded.Search, "Search every page",
                     "Find a word in English or Japanese across every issue you've downloaded.",
-                    Modifier.rise(5, animate))
+                    Modifier.rise(6, animate))
             }
             Spacer(Modifier.height(28.dp))
             Text(
                 "Scans and translations come from Gaming Alexandria's archive. Gloss isn't affiliated with them, and the translations are machine-made, so now and then they're wrong.",
                 style = Gloss.type.footnote, color = g.tertiary, textAlign = TextAlign.Center,
-                modifier = Modifier.rise(6, animate).widthIn(max = 380.dp),
+                modifier = Modifier.rise(7, animate).widthIn(max = 380.dp),
             )
         }
         // The button stays put while the rest scrolls under a fade.

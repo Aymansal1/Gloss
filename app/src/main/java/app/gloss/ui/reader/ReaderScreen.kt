@@ -7,6 +7,19 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.DragInteraction
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.setProgress
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -56,6 +69,8 @@ import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -109,6 +124,10 @@ import app.gloss.search.SearchText
 import app.gloss.ui.components.GlossSwitch
 import app.gloss.ui.components.Hairline
 import app.gloss.ui.components.MarkdownBlock
+import app.gloss.ui.components.blockPlainText
+import app.gloss.ui.learn.LearnPanel
+import app.gloss.ui.learn.PassageSource
+import app.gloss.ui.learn.issueLabel
 import app.gloss.ui.components.RoundIconButton
 import app.gloss.ui.components.SegmentedControl
 import app.gloss.ui.components.GlassBackdrop
@@ -164,6 +183,7 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
     val showZones by c.reading.showZones.collectAsState()
     val textScale by c.reading.textScale.collectAsState()
     val bookmarks by c.reading.bookmarks.collectAsState()
+    val learnButton by c.reading.learnButton.collectAsState()
     var mangaMode by rememberSaveable { mutableStateOf(false) }
     var chrome by rememberSaveable { mutableStateOf(true) }
     val zoomedPages = remember { mutableStateMapOf<Int, Boolean>() }
@@ -171,6 +191,9 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
     var hitRegion by remember { mutableStateOf<Pair<Int, Int>?>(null) } // page to region
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var options by remember { mutableStateOf(false) }
+    // The passage open in the Learn panel, if any.
+    var learning by remember { mutableStateOf<List<String>?>(null) }
+    var learningPage by remember { mutableIntStateOf(0) }
     // The page the reader is "on"; survives rotation so a spread re-opens on the right half.
     var anchorPage by rememberSaveable { mutableIntStateOf(startPage ?: c.reading.lastPage(id)) }
     val terms = remember(query) { query?.let { SearchText.parseQuery(it).highlightTerms }.orEmpty() }
@@ -189,8 +212,10 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
         return
     }
 
-    val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
-    val useSpreads = spreadsOn && landscape && issue.hasScan
+    // Sideways, or any screen wide enough for two pages (a tablet, an unfolded foldable).
+    val config = LocalConfiguration.current
+    val wide = config.orientation == Configuration.ORIENTATION_LANDSCAPE || config.screenWidthDp >= 600
+    val useSpreads = spreadsOn && wide && issue.hasScan
     val screens = remember(totalPages, useSpreads) { Spreads.layout(totalPages, useSpreads) }
     val models = remember(cnt) { ConcurrentHashMap<Int, PageModel>() }
     fun model(page: Int): PageModel = models.getOrPut(page) { PageModel(page, cnt.page(page), cnt.regionsFor(page)) }
@@ -225,6 +250,14 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
         val current = model(currentPage)
         val zoomed = screen.any { zoomedPages[it] == true }
 
+        // Swiping to the next page tucks the bars away, like Apple Books; a tap brings them back.
+        val autoHide by c.reading.autoHide.collectAsState()
+        LaunchedEffect(pager, autoHide) {
+            if (!autoHide) return@LaunchedEffect
+            pager.interactionSource.interactions.collect { i ->
+                if (i is DragInteraction.Start && sheetState.bottomSheetState.currentValue != SheetValue.Expanded) chrome = false
+            }
+        }
         LaunchedEffect(pager) {
             snapshotFlow { pager.currentPage }.distinctUntilChanged().collect { i ->
                 val pages = screens.getOrElse(i) { listOf(1) }
@@ -252,7 +285,8 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
         // The peek shows the page bar and thumbnails and stops just below them, measured so a
         // larger font or thumbnail size never lets the tabs underneath poke into view.
         val density = LocalDensity.current
-        var peekContent by remember { mutableStateOf(136.dp) }
+        var peekContent by remember { mutableStateOf(72.dp) }
+        var scrubbing by remember { mutableStateOf<Int?>(null) }
         val peek = peekContent + 12.dp + navInset
         val sheetPeek by animateDpAsState(if (chrome) peek else 0.dp, Motion.settle(), label = "peek")
         val isBookmarked = bookmarks.any { it.issueId == id && it.page == currentPage }
@@ -277,12 +311,25 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
                 ) {
                     Column(Modifier.onSizeChanged { peekContent = with(density) { it.height.toDp() } }) {
                     Grabber()
+                    // One slim row while reading: where you are, a slider to anywhere, the bookmark.
                     PageBar(
-                        label = Spreads.label(screen),
+                        label = scrubbing?.let { Spreads.label(screens[it]) } ?: Spreads.label(screen),
                         total = totalPages,
                         bookmarked = isBookmarked,
                         onBookmark = { c.reading.toggleBookmark(id, currentPage) },
+                        slider = {
+                            PageSlider(
+                                current = pager.currentPage,
+                                count = screens.size,
+                                rtl = rtl,
+                                onPreview = { scrubbing = it },
+                                onPick = { scope.launch { pager.scrollToPage(it) } },
+                                modifier = Modifier.weight(1f),
+                            )
+                        },
                     )
+                    }
+                    Spacer(Modifier.height(6.dp))
                     Scrubber(
                         screens = screens,
                         current = pager.currentPage,
@@ -295,8 +342,7 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
                         },
                         onPick = { scope.launch { pager.animateScrollToPage(it) } },
                     )
-                    }
-                    Spacer(Modifier.height(20.dp))
+                    Spacer(Modifier.height(16.dp))
                     Box(Modifier.padding(horizontal = 16.dp)) {
                         SegmentedControl(SheetTab.entries.map { it.label }, tab, { tab = it })
                     }
@@ -359,6 +405,12 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
                                     tab = SheetTab.Translation.ordinal
                                     scope.launch { sheetState.bottomSheetState.expand() }
                                 },
+                                onLearn = note?.takeIf { learnButton && it.original.isNotEmpty() }?.let { n ->
+                                    {
+                                        learning = n.original.map { blockPlainText(it) }
+                                        learningPage = pageNo
+                                    }
+                                },
                                 modifier = mod,
                             )
                         } else {
@@ -393,6 +445,14 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
                     onOptions = { options = true },
                 )
 
+                learning?.let { blocks ->
+                    LearnSheet(
+                        blocks = blocks,
+                        source = PassageSource(id, issueLabel(issue.magazineName, issue.title), learningPage),
+                        onDismiss = { learning = null },
+                    )
+                }
+
                 if (options) {
                     OptionsPopover(
                         textScale = textScale,
@@ -413,6 +473,25 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
 }
 
 private val SheetShape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)
+
+/** The Learn panel for the glossed box, in a sheet over the page. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LearnSheet(blocks: List<String>, source: PassageSource, onDismiss: () -> Unit) {
+    val g = Gloss.colors
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
+        containerColor = g.raised,
+        contentColor = g.text,
+        dragHandle = { Grabber() },
+    ) {
+        LearnPanel(
+            blocks, source,
+            Modifier.verticalScroll(rememberScrollState()).windowInsetsPadding(WindowInsets.navigationBars).padding(bottom = 12.dp),
+        )
+    }
+}
 
 @Composable
 private fun Message(text: String) {
@@ -584,23 +663,84 @@ private fun Grabber() {
     }
 }
 
-/** "12 of 180" in the gloss hand, and the bookmark. */
+/** "12 of 180" in the gloss hand, a slider through the issue, and the bookmark. */
 @Composable
-private fun PageBar(label: String, total: Int, bookmarked: Boolean, onBookmark: () -> Unit) {
+private fun PageBar(label: String, total: Int, bookmarked: Boolean, onBookmark: () -> Unit, slider: @Composable RowScope.() -> Unit) {
     val g = Gloss.colors
     Row(
         Modifier.fillMaxWidth().padding(start = 20.dp, end = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, style = Gloss.type.glossTitle, color = GoldLeaf.Hi)
-        Spacer(Modifier.width(8.dp))
-        Text("of $total", style = Gloss.type.subhead, color = g.secondary, modifier = Modifier.weight(1f).offset(y = 2.dp))
+        Text(label, style = Gloss.type.glossTitle, color = GoldLeaf.Hi, modifier = Modifier.widthIn(min = 34.dp))
+        Spacer(Modifier.width(6.dp))
+        Text("of $total", style = Gloss.type.footnote, color = g.secondary, modifier = Modifier.offset(y = 2.dp))
+        Spacer(Modifier.width(14.dp))
+        slider()
+        Spacer(Modifier.width(4.dp))
         RoundIconButton(
             if (bookmarked) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
             if (bookmarked) "Remove bookmark" else "Bookmark this page",
             onBookmark,
             tint = if (bookmarked) g.vermilion else g.text,
         )
+    }
+}
+
+/**
+ * A thin track through the whole issue. Drag to preview a page number, let go to jump there;
+ * a tap jumps straight to that point. Runs right to left when the pages do.
+ */
+@Composable
+private fun PageSlider(
+    current: Int,
+    count: Int,
+    rtl: Boolean,
+    onPreview: (Int?) -> Unit,
+    onPick: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val g = Gloss.colors
+    var drag by remember { mutableStateOf<Float?>(null) }
+    val last = (count - 1).coerceAtLeast(1)
+    fun indexAt(f: Float) = (f * last).roundToInt().coerceIn(0, count - 1)
+    val target = drag ?: (current.toFloat() / last)
+    val shown by animateFloatAsState(target, if (drag != null) snap() else Motion.move(), label = "slider")
+    Box(
+        modifier
+            .height(44.dp)
+            .semantics {
+                contentDescription = "Page"
+                progressBarRangeInfo = ProgressBarRangeInfo(current.toFloat(), 0f..last.toFloat(), steps = (count - 2).coerceAtLeast(0))
+                setProgress { v -> onPick(v.roundToInt().coerceIn(0, count - 1)); true }
+            }
+            .pointerInput(count, rtl) {
+                fun frac(x: Float) = (x / size.width).coerceIn(0f, 1f).let { if (rtl) 1f - it else it }
+                detectHorizontalDragGestures(
+                    onDragStart = { drag = frac(it.x); onPreview(indexAt(drag!!)) },
+                    onDragEnd = { drag?.let { onPick(indexAt(it)) }; drag = null; onPreview(null) },
+                    onDragCancel = { drag = null; onPreview(null) },
+                ) { change, _ ->
+                    change.consume()
+                    drag = frac(change.position.x)
+                    onPreview(indexAt(drag!!))
+                }
+            }
+            .pointerInput(count, rtl) {
+                detectTapGestures { o -> onPick(indexAt((o.x / size.width).coerceIn(0f, 1f).let { if (rtl) 1f - it else it })) }
+            },
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Canvas(Modifier.fillMaxWidth().height(22.dp)) {
+            val y = size.height / 2
+            val r = 2.dp.toPx()
+            val knob = (if (drag != null) 9.dp else 7.dp).toPx()
+            val span = size.width - 2 * knob
+            val pos = knob + span * (if (rtl) 1f - shown else shown)
+            drawLine(g.fill, Offset(knob, y), Offset(size.width - knob, y), strokeWidth = 2 * r, cap = StrokeCap.Round)
+            val from = if (rtl) size.width - knob else knob
+            drawLine(Brush.horizontalGradient(GoldLeaf.stops), Offset(from, y), Offset(pos, y), strokeWidth = 2 * r, cap = StrokeCap.Round)
+            drawCircle(Color.White, knob, Offset(pos, y))
+        }
     }
 }
 

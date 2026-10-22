@@ -1,5 +1,6 @@
 package app.gloss.screens
 
+import app.gloss.ui.intro.Intro
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
@@ -66,6 +67,8 @@ object Fixtures {
         warmUpNativeGraphics()
         val app = app()
         runCatching { WorkManagerTestInitHelper.initializeTestWorkManager(app) }
+        // Tests start past the welcome screen; IntroTest shows it on its own.
+        Intro.markSeen(app)
         val c = app.container
         val dir = c.library.dirFor(id).apply { mkdirs() }
         val issue = InstalledIssue(

@@ -49,6 +49,14 @@ class ReadingState(context: Context) {
     private val _spreads = MutableStateFlow(prefs.getBoolean("spreads", true))
     val spreads: StateFlow<Boolean> = _spreads.asStateFlow()
 
+    /** Tuck the reader's bars away when you start turning pages. */
+    private val _autoHide = MutableStateFlow(prefs.getBoolean("auto_hide", true))
+    val autoHide: StateFlow<Boolean> = _autoHide.asStateFlow()
+
+    /** Show the Learn button on translation cards. */
+    private val _learnButton = MutableStateFlow(prefs.getBoolean("learn_button", true))
+    val learnButton: StateFlow<Boolean> = _learnButton.asStateFlow()
+
     private val _appearance = MutableStateFlow(
         runCatching { Appearance.valueOf(prefs.getString("appearance", null) ?: "") }.getOrDefault(Appearance.System),
     )
@@ -56,6 +64,8 @@ class ReadingState(context: Context) {
 
     fun setRightToLeft(v: Boolean) { _rightToLeft.value = v; prefs.edit().putBoolean("rtl", v).apply() }
     fun setShowZones(v: Boolean) { _showZones.value = v; prefs.edit().putBoolean("zones", v).apply() }
+    fun setAutoHide(v: Boolean) { _autoHide.value = v; prefs.edit().putBoolean("auto_hide", v).apply() }
+    fun setLearnButton(v: Boolean) { _learnButton.value = v; prefs.edit().putBoolean("learn_button", v).apply() }
     fun setSpreads(v: Boolean) { _spreads.value = v; prefs.edit().putBoolean("spreads", v).apply() }
     fun setAppearance(v: Appearance) { _appearance.value = v; prefs.edit().putString("appearance", v.name).apply() }
     fun setShowAdult(v: Boolean) { _showAdult.value = v; prefs.edit().putBoolean("show_adult", v).apply() }
@@ -120,6 +130,8 @@ class ReadingState(context: Context) {
             "rtl" to _rightToLeft.value.toString(),
             "zones" to _showZones.value.toString(),
             "spreads" to _spreads.value.toString(),
+            "auto_hide" to _autoHide.value.toString(),
+            "learn_button" to _learnButton.value.toString(),
             "show_adult" to _showAdult.value.toString(),
             "text_scale" to _textScale.value.toString(),
             "appearance" to _appearance.value.name,
@@ -136,6 +148,8 @@ class ReadingState(context: Context) {
         backup.settings["rtl"]?.toBooleanStrictOrNull()?.let { setRightToLeft(it) }
         backup.settings["zones"]?.toBooleanStrictOrNull()?.let { setShowZones(it) }
         backup.settings["spreads"]?.toBooleanStrictOrNull()?.let { setSpreads(it) }
+        backup.settings["auto_hide"]?.toBooleanStrictOrNull()?.let { setAutoHide(it) }
+        backup.settings["learn_button"]?.toBooleanStrictOrNull()?.let { setLearnButton(it) }
         backup.settings["show_adult"]?.toBooleanStrictOrNull()?.let { setShowAdult(it) }
         backup.settings["text_scale"]?.toFloatOrNull()?.let { setTextScale(it) }
         backup.settings["appearance"]?.let { a -> Appearance.entries.firstOrNull { it.name == a } }?.let { setAppearance(it) }
