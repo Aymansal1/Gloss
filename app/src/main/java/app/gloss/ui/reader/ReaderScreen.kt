@@ -346,7 +346,9 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
                                 textScale = textScale,
                                 calloutBottom = calloutBottom,
                                 onTapRegion = { r ->
-                                    selection = Selection(pageNo, m.blocksForRegion(r).firstOrNull(), r)
+                                    // Tapping the glossed box again puts the gloss away.
+                                    val again = selection?.let { it.page == pageNo && it.region == r } == true
+                                    selection = if (again) null else Selection(pageNo, m.blocksForRegion(r).firstOrNull(), r)
                                     hitRegion = null
                                 },
                                 onTapEmpty = {
