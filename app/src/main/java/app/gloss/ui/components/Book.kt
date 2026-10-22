@@ -105,12 +105,9 @@ fun SpinnableBook(
     val c = container()
     val context = LocalContext.current
     val installed = c.library.issues.value[info.id]
-    var back by remember(info.id) { mutableStateOf<ImageBitmap?>(null) }
     var pages by remember(info.id) { mutableIntStateOf(0) }
     LaunchedEffect(info.id, installed?.hasScan) {
         if (installed == null || !installed.hasScan) return@LaunchedEffect
-        val file = c.pdf.ensureBackCover(installed.pdfFile, File(installed.dir, "back.jpg"))
-        back = withContext(Dispatchers.IO) { file?.let { BitmapFactory.decodeFile(it.path)?.asImageBitmap() } }
         pages = c.pdf.pageCount(installed.pdfFile).takeIf { it > 0 }
             ?: runCatching { c.pdf.aspects(installed.pdfFile).size }.getOrDefault(0)
     }
@@ -165,9 +162,6 @@ fun SpinnableBook(
         }
         .pointerInput(info.id) { detectTapGestures(onTap = { flip() }) }
 
-    val front = rememberGraphicsLayer()
-    val rear = rememberGraphicsLayer()
-    val spine = rememberGraphicsLayer()
     val pigment = Pigment.forSeries(info.magazineName)
     BoxWithConstraints(
         modifier
@@ -185,30 +179,11 @@ fun SpinnableBook(
         // About 6% of the width for a 220-page weekly, up to a fat 13% for a big monthly.
         val thickness = w * (count / 220f * 0.06f).coerceIn(0.035f, 0.13f)
 
-        // The faces are laid out here but only drawn into layers, which the book below projects
-        // onto its sides. They stay live, so a cover that finishes loading appears on the book.
-        Box(Modifier.fillMaxSize().recordInto(front)) {
-            IssueCover(info, Modifier.fillMaxSize(), shared = CoverSharing.None, shape = RectangleShape)
-        }
-        Box(Modifier.fillMaxSize().recordInto(rear)) {
-            val bmp = back
-            if (bmp != null) {
-                Image(bmp, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-            } else {
-                StockBack(info, publisher, Modifier.fillMaxSize())
-            }
-        }
-        Box(Modifier.width(thickness).fillMaxHeight().recordInto(spine)) { Spine(info, Modifier.fillMaxSize()) }
-
-        // Snapshot the faces into bitmaps to map onto the box (layers themselves don't take a
-        // perspective transform everywhere). Again a little later, once a cover image arrives.
+        val fraction = thickness / w
         var faces by remember(info.id) { mutableStateOf<Faces?>(null) }
-        LaunchedEffect(info.id, back, thickness) {
-            for (wait in longArrayOf(32, 300, 900, 2200, 5000)) {
-                delay(wait)
-                runCatching { Faces(front.toImageBitmap(), rear.toImageBitmap(), spine.toImageBitmap()) }
-                    .getOrNull()?.let { faces = it }
-            }
+        LaunchedEffect(info.id, installed?.hasScan, fraction) {
+            val set = BookFaces.paint(context, c.pdf, info, installed, publisher, fraction)
+            faces = Faces(set.front.asImageBitmap(), set.back.asImageBitmap(), set.spine.asImageBitmap())
         }
         Spacer(Modifier.fillMaxSize().drawBehind { drawBook(a, thickness.toPx(), faces, pigment) })
     }
@@ -217,11 +192,6 @@ fun SpinnableBook(
 private class Faces(val front: ImageBitmap, val back: ImageBitmap, val spine: ImageBitmap)
 
 private fun wrap(degrees: Float) = ((degrees - REST) % 360f + 360f) % 360f + REST
-
-/** Lays the content out and records it into [layer] without drawing it on screen. */
-private fun Modifier.recordInto(layer: GraphicsLayer) = drawWithContent {
-    layer.record(this, layoutDirection, size.toIntSize()) { this@drawWithContent.drawContent() }
-}
 
 /** Light from the upper left, a little in front: x and z of a unit vector (y doesn't matter here). */
 private val LIGHT = run { val x = -0.42f; val z = 1f; val n = sqrt(x * x + z * z); floatArrayOf(x / n, z / n) }
@@ -384,104 +354,3 @@ private fun DrawScope.pageEdges(t: Float, h: Float, pigment: Color) {
 }
 
 private fun Color.shade(f: Float) = Color(red * (1 - f), green * (1 - f), blue * (1 - f), alpha)
-
-/** The spine: the series' colour, rounded by light, with the masthead and issue running down it. */
-@Composable
-private fun Spine(info: CoverInfo, modifier: Modifier) {
-    val pigment = Pigment.forSeries(info.magazineName)
-    val on = Pigment.on(pigment)
-    BoxWithConstraints(
-        modifier.background(Brush.horizontalGradient(listOf(pigment.shade(0.3f), pigment.shade(0.05f), pigment.shade(0.25f)))),
-        contentAlignment = Alignment.Center,
-    ) {
-        val length = maxHeight
-        val size = (maxWidth.value * 0.55f).coerceIn(4f, 11f).sp
-        Text(
-            "${info.magazineName.uppercase()}   ${info.title}",
-            color = on,
-            fontFamily = InterDisplay,
-            fontWeight = FontWeight(700),
-            fontSize = size,
-            lineHeight = size,
-            letterSpacing = 0.02.em,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center,
-            // Laid out along the spine's length, then turned to read top to bottom.
-            modifier = Modifier.requiredWidth(length * 0.92f).graphicsLayer { rotationZ = 90f },
-        )
-    }
-}
-
-/**
- * A back cover for issues whose scan isn't on the phone: the series' colour, the masthead
- * small at the top, and a barcode panel like the one on every newsstand magazine.
- */
-@Composable
-private fun StockBack(info: CoverInfo, publisher: String, modifier: Modifier) {
-    val pigment = Pigment.forSeries(info.magazineName)
-    val on = Pigment.on(pigment)
-    BoxWithConstraints(modifier.background(Brush.linearGradient(listOf(pigment.shade(0.12f), pigment.shade(0.38f))))) {
-        val w = maxWidth
-        Column(Modifier.fillMaxSize().padding(w * 0.09f)) {
-            Text(
-                info.magazineName.uppercase(),
-                color = on.copy(alpha = 0.75f),
-                fontFamily = InterDisplay,
-                fontWeight = FontWeight(800),
-                fontSize = (w.value * 0.06f).coerceIn(7f, 13f).sp,
-                letterSpacing = 0.04.em,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(Modifier.weight(1f))
-            if (publisher.isNotBlank()) {
-                Text(
-                    publisher,
-                    color = on.copy(alpha = 0.7f),
-                    fontFamily = InterText,
-                    fontSize = (w.value * 0.05f).coerceIn(6f, 11f).sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Spacer(Modifier.height(w * 0.03f))
-            }
-            Column(
-                Modifier
-                    .background(Color.White, RoundedCornerShape(2.dp))
-                    .padding(horizontal = w * 0.03f, vertical = w * 0.025f),
-            ) {
-                Barcode(info.id, Modifier.width(w * 0.4f).height(w * 0.14f))
-                Text(
-                    barcodeDigits(info.id),
-                    color = Color.Black,
-                    fontFamily = InterText,
-                    fontSize = (w.value * 0.035f).coerceIn(5f, 9f).sp,
-                    letterSpacing = 0.08.em,
-                    maxLines = 1,
-                )
-            }
-        }
-    }
-}
-
-private fun barcodeDigits(id: String): String {
-    val r = Random(id.hashCode())
-    return "4910" + (1..9).joinToString("") { r.nextInt(10).toString() }
-}
-
-/** Bars from the issue id, so each issue's back always looks the same. */
-@Composable
-private fun Barcode(id: String, modifier: Modifier) {
-    Canvas(modifier) {
-        val r = Random(id.hashCode() * 31)
-        val bars = List(46) { 1 + r.nextInt(3) }
-        val unit = size.width / (bars.sum() * 1.6f)
-        var x = 0f
-        bars.forEachIndexed { i, b ->
-            val bw = b * unit
-            if (i % 2 == 0) drawRect(Color.Black, Offset(x, 0f), Size(bw, size.height))
-            x += bw * 1.6f
-        }
-    }
-}
