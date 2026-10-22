@@ -177,6 +177,16 @@ Capsules for anything you press (pills, tab bar, reader title capsule, round ico
 
 Springs everywhere, nothing linear, nothing that bounces twice (`Motion.press / move / settle / offset`). Navigation is an iOS push with a parallax underlay; the reader opens with a fade and scale. When the system animator scale is 0, animations resolve instantly.
 
+## Newsstand layer
+Chosen October 2026 to give Gloss a personality of its own. It sits on top of everything above: lapis, gold leaf, vermilion, the scribe's hand and the gloss callout all stay exactly as they are. Newsstand borrows the print furniture of the 80s and 90s magazines Gloss reads, never their Japanese decoration.
+
+- **Paper and ink.** Light surfaces read as newsprint (`#F3EEE3`, `#E9E2D2`) where a page is a page (the website, empty states, the stock back cover); the app's grounds stay lapis-tinted.
+- **Mastheads.** Big section titles and numbers are set in Archivo, condensed (width 62 to 75) and heavy (800 to 900), uppercase. Inter stays the interface face; Archivo is for display only.
+- **Print furniture.** Registration crosshairs, a CMYK colour bar, halftone dot fields, price-tag starbursts, barcodes, folios ("p. 12") and "Vol. 1 No. 42" datelines (the release number is the issue number). Use one or two per surface, as accents, never as texture over content.
+- **Misregistration.** The wordmark may carry a vermilion ghost offset a few pixels down and right, like a plate printed out of register. Only on the masthead.
+- **Objects.** Issues are physical: 3D books with spines and page edges on the issue page, and shelves of spines where a collection is shown.
+- **Don't** add halftone or grain over scans, use process yellow outside price tags, or set body text in Archivo.
+
 ## Do's and Don'ts
 
 - Do keep gold for glossing only. If something isn't a translation, highlight or page number, it isn't gold.
