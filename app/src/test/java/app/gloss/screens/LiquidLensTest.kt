@@ -27,8 +27,14 @@ import java.io.File
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [34])
 class LiquidLensTest {
+    /**
+     * Robolectric's shader compiler is an older Skia that spells `content.eval(p)` as
+     * `sample(content, p)`; phones take the AGSL as written.
+     */
+    private val source = LiquidLens.SOURCE.replace(Regex("""(\w+)\.eval\("""), "sample($1, ")
+
     @Test fun shaderCompiles() {
-        val error = runCatching { RuntimeShader(LiquidLens.SOURCE) }.exceptionOrNull()
+        val error = runCatching { RuntimeShader(source) }.exceptionOrNull()
         // Robolectric may not ship the shader compiler at all; only a compile error counts.
         assumeTrue("RuntimeShader isn't available here: $error", error == null || error is IllegalArgumentException)
         if (error != null) throw AssertionError("The lens shader doesn't compile: ${error.message}", error)
@@ -42,24 +48,24 @@ class LiquidLensTest {
     @Test fun lensBendsTheRim() {
         val w = 1080
         val h = 420
-        val source = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        Canvas(source).apply {
+        val scene = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        Canvas(scene).apply {
             val stripes = intArrayOf(0xFF2338C2.toInt(), 0xFFE1A91A.toInt(), 0xFFC23152.toInt(), 0xFF1E8F5E.toInt(), 0xFFF2F3F8.toInt())
             var x = 0f
             var i = 0
             while (x < w) { drawRect(x, 0f, x + 36f, h.toFloat(), Paint().apply { color = stripes[i++ % stripes.size] }); x += 36f }
             drawText("GLOSS 1994", 40f, 300f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; textSize = 210f; isFakeBoldText = true })
         }
-        val out = source.copy(Bitmap.Config.ARGB_8888, true)
+        val out = scene.copy(Bitmap.Config.ARGB_8888, true)
         val canvas = Canvas(out)
         fun pane(left: Float, top: Float, pw: Float, ph: Float) {
-            val shader = RuntimeShader(LiquidLens.SOURCE)
+            val shader = RuntimeShader(source)
             shader.setFloatUniform("size", pw, ph)
             shader.setFloatUniform("radius", minOf(pw, ph) / 2f)
             shader.setFloatUniform("depth", minOf(48f, minOf(pw, ph) / 2f))
             shader.setFloatUniform("bend", 42f)
             shader.setFloatUniform("spread", 0.12f)
-            shader.setInputShader("content", BitmapShader(source, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply {
+            shader.setInputShader("content", BitmapShader(scene, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply {
                 setLocalMatrix(Matrix().apply { setTranslate(-left, -top) })
             })
             val clip = Path().apply { addRoundRect(RectF(0f, 0f, pw, ph), minOf(pw, ph) / 2f, minOf(pw, ph) / 2f, Path.Direction.CW) }
