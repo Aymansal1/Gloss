@@ -159,9 +159,9 @@ internal object LiquidLens {
             float slope = 1.0 - sqrt(max(1.0 - t * t, 0.0));
             float2 shift = -n * bend * slope;
             half4 mid = content.eval(coord + shift);
-            half r = content.eval(coord + shift * (1.0 + spread)).r;
-            half b = content.eval(coord + shift * (1.0 - spread)).b;
-            return half4(r, mid.g, b, mid.a);
+            half4 red = content.eval(coord + shift * (1.0 + spread));
+            half4 blue = content.eval(coord + shift * (1.0 - spread));
+            return half4(red.r, mid.g, blue.b, mid.a);
         }
     """
 }
