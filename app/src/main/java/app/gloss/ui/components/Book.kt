@@ -82,7 +82,7 @@ import kotlin.math.sqrt
 import kotlin.random.Random
 
 /** The angle a book rests at: turned a little so its spine and depth show. */
-private const val REST = 22f
+private const val REST = 28f
 
 /**
  * The issue's cover as a real magazine you can spin. It's drawn as a solid box in perspective:
@@ -176,8 +176,8 @@ fun SpinnableBook(
     ) {
         val w = maxWidth
         val count = if (pages > 0) pages else 220
-        // About 6% of the width for a 220-page weekly, up to a fat 13% for a big monthly.
-        val thickness = w * (count / 220f * 0.06f).coerceIn(0.035f, 0.13f)
+        // About 7.5% of the width for a 220-page weekly, up to a fat 14% for a big monthly.
+        val thickness = w * (count / 220f * 0.075f).coerceIn(0.045f, 0.14f)
 
         val fraction = thickness / w
         var faces by remember(info.id) { mutableStateOf<Faces?>(null) }

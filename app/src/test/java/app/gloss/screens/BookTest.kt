@@ -25,7 +25,7 @@ import org.robolectric.annotation.GraphicsMode
 
 /**
  * The spinning cover at fixed angles: a downloaded issue (its last page as the back) on top,
- * and one that isn't on the phone (the made-up back) below. At +22° (where it rests) the spine shows on the right; at -35° the page edges show on the left.
+ * and one that isn't on the phone (the made-up back) below. At +28° (where it rests) the spine shows on the right; at -35° the page edges show on the left.
  */
 @RunWith(AndroidJUnit4::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -34,7 +34,7 @@ class BookTest {
     @get:Rule(order = 0) val fixture = InstallFixture()
     @get:Rule(order = 1) val rule = createAndroidComposeRule<ComponentActivity>()
 
-    private val angles = listOf(0f, 22f, -35f, 90f, 202f)
+    private val angles = listOf(0f, 28f, -35f, 90f, 208f)
 
     @Test fun turnsAtEveryAngle() {
         val installed = CoverInfo(Fixtures.ID, "Famicom Tsūshin", "March 4, 1994", "1994", "")

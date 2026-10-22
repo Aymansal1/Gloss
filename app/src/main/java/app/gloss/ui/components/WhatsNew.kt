@@ -29,7 +29,7 @@ import app.gloss.ui.theme.GoldLeaf
  */
 object WhatsNew {
     val notes = listOf(
-        "Covers are books now: on an issue's page, drag the cover sideways to spin it and see the spine and back. Downloaded issues show their real back page.",
+        "Issues are real 3D books now, with a spine, page edges and a back cover. Drag one sideways to spin it, or switch back to the flat cover with 2D under it. Downloaded issues show their real back page.",
         "Hold a cover for quick actions: read, download, see details, or remove it from your phone.",
         "Scrolling right after going back no longer sends covers drifting around the screen.",
     )
