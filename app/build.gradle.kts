@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "app.gloss"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "app.gloss"
@@ -48,9 +48,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
     buildFeatures {
         compose = true
         buildConfig = true
@@ -65,6 +62,12 @@ android {
             it.maxHeapSize = "3g"
             it.testLogging { exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL }
         }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 
@@ -86,6 +89,7 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.haze)
     implementation(libs.haze.materials)
+    implementation(libs.backdrop)
     implementation(libs.coroutines.android)
     debugImplementation(libs.compose.ui.tooling)
 

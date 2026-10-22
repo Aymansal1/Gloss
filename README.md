@@ -137,7 +137,7 @@ To redraw the icon, wordmark and banner after changing them, run `python3 docs/b
 
 The catalog, scans, transcriptions and translations come from [Gaming Alexandria](https://www.gamingalexandria.com), whose desktop [Rosetta Magazine Researcher](https://github.com/duhubz/Rosetta-Magazine-Researcher) defines the data format Gloss reads. Gloss is an independent project and is not affiliated with Gaming Alexandria.
 
-Gloss uses [Inter](https://rsms.me/inter/) and [Instrument Serif](https://github.com/Instrument/instrument-serif), both under the SIL Open Font License (see [`licenses/`](licenses/)), and [Haze](https://github.com/chrisbanes/haze) for the frosted glass.
+Gloss uses [Inter](https://rsms.me/inter/) and [Instrument Serif](https://github.com/Instrument/instrument-serif), both under the SIL Open Font License (see [`licenses/`](licenses/)), [Haze](https://github.com/chrisbanes/haze) for the frosted glass, and [Backdrop](https://github.com/Kyant0/AndroidLiquidGlass) (Apache 2.0) for the liquid glass.
 
 ## License
 

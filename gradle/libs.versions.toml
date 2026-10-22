@@ -1,6 +1,6 @@
 [versions]
 agp = "8.10.1"
-kotlin = "2.1.21"
+kotlin = "2.3.10"
 composeBom = "2025.05.00"
 activityCompose = "1.10.1"
 navigationCompose = "2.9.0"
@@ -11,6 +11,7 @@ okhttp = "4.12.0"
 coroutines = "1.10.2"
 junit = "4.13.2"
 haze = "1.6.10"
+backdrop = "1.0.6"
 robolectric = "4.14.1"
 roborazzi = "1.43.0"
 androidxTestJunit = "1.2.1"
@@ -35,6 +36,7 @@ okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhtt
 coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 haze = { group = "dev.chrisbanes.haze", name = "haze", version.ref = "haze" }
+backdrop = { group = "io.github.kyant0", name = "backdrop", version.ref = "backdrop" }
 haze-materials = { group = "dev.chrisbanes.haze", name = "haze-materials", version.ref = "haze" }
 json = { group = "org.json", name = "json", version = "20240303" }
 compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }

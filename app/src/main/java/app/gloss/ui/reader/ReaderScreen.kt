@@ -451,7 +451,7 @@ private fun ReaderTopBar(
                 Column(
                     Modifier
                         .weight(1f)
-                        .liquidGlass(backdrop, haze, CircleShape, tint = g.raised)
+                        .liquidGlass(backdrop, haze, CircleShape, tint = g.raised, bend = 12.dp, frost = 4.dp)
                         .padding(horizontal = 18.dp, vertical = 7.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
@@ -479,7 +479,7 @@ private fun GlassCircle(haze: HazeState, backdrop: GlassBackdrop, icon: androidx
         Modifier
             .size(44.dp)
             .pressable(onClick, scaleTo = 0.88f, onClickLabel = label, role = Role.Button)
-            .then(if (active) Modifier.clip(CircleShape).background(Brush.linearGradient(GoldLeaf.stops)) else Modifier.liquidGlass(backdrop, haze, CircleShape, tint = g.raised)),
+            .then(if (active) Modifier.clip(CircleShape).background(Brush.linearGradient(GoldLeaf.stops)) else Modifier.liquidGlass(backdrop, haze, CircleShape, tint = g.raised, bend = 12.dp, frost = 4.dp)),
         contentAlignment = Alignment.Center,
     ) {
         Icon(icon, contentDescription = label, tint = if (active) Color(0xFF2A1D05) else g.text, modifier = Modifier.size(22.dp))
@@ -493,7 +493,7 @@ private fun GlassText(haze: HazeState, backdrop: GlassBackdrop, text: String, la
         Modifier
             .size(44.dp)
             .pressable(onClick, scaleTo = 0.88f, onClickLabel = label, role = Role.Button)
-            .liquidGlass(backdrop, haze, CircleShape, tint = g.raised)
+            .liquidGlass(backdrop, haze, CircleShape, tint = g.raised, bend = 12.dp, frost = 4.dp)
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
