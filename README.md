@@ -42,15 +42,28 @@ Gloss needs Android 13 or newer. It has no accounts, no analytics and no ads.
 <img src="docs/brand/img/reading.png" alt="Left, a phone in manga mode with English set inside every text box of the scan and the reading sheet peeking from the bottom. Right, a phone turned sideways showing two facing pages as a spread." width="100%">
 
 - **Tap any text on the scan** to gloss it. The box fills with gold leaf, and its English appears in a card beside it, with the Japanese underneath. Tap the card to read the whole page.
-- **Pull up the sheet** to read the page as translation, original or summary, or to slide through page thumbnails.
+- **Slide through the issue** with the page slider in the slim bar at the bottom. Pull the bar up to read the page as translation, original or summary, or to pick a page from thumbnails. The controls tuck away while you turn pages; tap the page to bring them back.
 - **Translate the whole page** with the 文/A button. It sets the English inside every text box on the scan, sized to fit.
 - **Pinch or double-tap** to zoom. The page renders sharper as you zoom in, and the gloss card stays readable at any zoom.
-- **Turn your phone sideways** to see facing pages side by side, the way the magazine was printed.
+- **Turn your phone sideways**, or open Gloss on a tablet or unfolded foldable, to see facing pages side by side, the way the magazine was printed.
 - **Pages turn right to left**, like the printed magazines. You can switch this under **Aa**.
 - Bookmarks with notes, "Continue reading", adjustable text size, and light, dark or automatic appearance. The reader itself always stays dark.
 - **Text-only downloads** skip the scan to save space. You can add the scan later.
 - **Interrupted downloads pick up where they stopped**, including from Mega.
 - **Back up your reading** (bookmarks, notes, your page in every issue) to a file, and restore it on another phone.
+
+<br>
+
+## Learning Japanese
+
+- **Tap Learn on a translation card** to break the passage into words. Each word shows its reading above the kanji, its meaning and part of speech, and a button to hear it said. Inflected verbs are traced back to their dictionary form, so 食べなかった looks up 食べる.
+- **Tap a kanji** for its meanings, on and kun readings, school grade and an animated stroke order.
+- **Star words** to keep them in the **Learn** tab, each linked back to the page you found it on. Export them as a file that Anki imports as cards.
+- **Gamer slang**: about a hundred terms from 80s and 90s magazines, like 裏技 (secret tricks) and 残機 (lives left), explained wherever they appear and listed in the Learn tab.
+- **Reading level**: downloaded issues say how hard their Japanese is, judged by how many of their kanji go past primary school.
+- Everything works offline: the dictionary is built into the app.
+
+Discover also looks back at what was on newsstands this week in past years, with a moment from gaming history, and each magazine's page carries a short, credited note from Wikipedia.
 
 > [!IMPORTANT]
 > The transcriptions and translations are machine-generated and can be wrong. Check anything that matters against the scan.
@@ -122,6 +135,17 @@ GitHub Actions runs the unit tests and builds the APK on every push. Pushes to `
 
 To build locally you need JDK 17 and the Android SDK:
 
+The Learn dictionary is generated, not checked in. Build it once before building the app (it needs Python 3, `xz` and network access):
+
+```sh
+pip download --no-deps jamdict-data==1.5 -d /tmp/dict && tar xzf /tmp/dict/jamdict_data-1.5.tar.gz -C /tmp/dict
+xz -d /tmp/dict/jamdict_data-1.5/jamdict_data/jamdict.db.xz
+git clone --depth 1 https://github.com/KanjiVG/kanjivg /tmp/dict/kanjivg
+python3 tools/japanese_pack.py /tmp/dict/jamdict_data-1.5/jamdict_data/jamdict.db /tmp/dict/kanjivg app/src/main/assets/japanese.db
+```
+
+Without it the app still builds and runs; only the Learn panel says its dictionary is missing.
+
 ```sh
 ./gradlew :app:testDebugUnitTest   # unit tests
 ./gradlew :app:assembleDebug       # app/build/outputs/apk/debug/app-debug.apk
@@ -138,6 +162,8 @@ To redraw the icon, wordmark and banner after changing them, run `python3 docs/b
 The catalog, scans, transcriptions and translations come from [Gaming Alexandria](https://www.gamingalexandria.com), whose desktop [Rosetta Magazine Researcher](https://github.com/duhubz/Rosetta-Magazine-Researcher) defines the data format Gloss reads. Gloss is an independent project and is not affiliated with Gaming Alexandria.
 
 Gloss uses [Inter](https://rsms.me/inter/) and [Instrument Serif](https://github.com/Instrument/instrument-serif), both under the SIL Open Font License (see [`licenses/`](licenses/)), [Haze](https://github.com/chrisbanes/haze) for the frosted glass, and [Backdrop](https://github.com/Kyant0/AndroidLiquidGlass) (Apache 2.0) for the liquid glass.
+
+The Learn dictionary is built from [JMdict](https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project) and [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project), the property of the [Electronic Dictionary Research and Development Group](https://www.edrdg.org/) and used under its licence (CC BY-SA 4.0), via the [jamdict-data](https://pypi.org/project/jamdict-data/) package. Stroke order comes from [KanjiVG](https://kanjivg.tagaini.net) by Ulrich Apel (CC BY-SA 3.0). Magazine notes are from [Wikipedia](https://en.wikipedia.org) (CC BY-SA 4.0).
 
 ## License
 

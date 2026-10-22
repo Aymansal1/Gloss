@@ -153,7 +153,7 @@ Large system font sizes must keep working: no fixed-height text containers, and 
 
 20dp page gutters; grouped sections separated by 26dp with uppercase-free footnote headers. Lists are inset grouped cells (12dp radius group, hairline separators inset from the leading edge). Grids of covers size from the screen width (`screenWidthDp / 128` columns). The floating tab bar reserves `TabBarClearance` at the bottom of every home tab.
 
-In the reader, the page fills the screen; chrome sits over it and hides with a tap. Landscape with spreads on shows facing pages meeting at the gutter, ordered by reading direction.
+In the reader, the page fills the screen; chrome sits over it, hides with a tap, and tucks away by itself when you start swiping pages. Landscape, or any screen at least 600dp wide, with spreads on shows facing pages meeting at the gutter, ordered by reading direction.
 
 ## Elevation & Depth
 
@@ -168,7 +168,9 @@ Capsules for anything you press (pills, tab bar, reader title capsule, round ico
 - **Pressable** (`Modifier.pressable`): no ripple; the element scales to ~0.96 on a `Motion.press()` spring. Rows grey out like table cells (`rowPress`).
 - **PillButton**: Filled (lapis), Tinted (lapis tint), Plain. The issue screen's Download pill morphs into a progress ring with a stop square, then into Read.
 - **SegmentedControl**: a thumb that springs between segments.
-- **GlassTabBar**: Discover and Library in a frosted capsule, Search as a separate round button.
+- **GlassTabBar**: Discover, Library and Learn in a liquid-glass capsule, Search as a separate round button.
+- **Learn panel**: a sheet opened from the gloss callout's Learn pill (never automatically). The passage sits word by word with readings in small type above the kanji (gold in the dark reader, gold ink in light), tappable words in text colour and grammar words in secondary. Below it the chosen word's card (headword, reading, voice, star, numbered senses, kanji chips) or a kanji card with the stroke order drawn stroke by stroke in gold, then ink. Readings never appear on the page itself.
+- **Page bar**: the reader's peek is one slim row: the page number in the scribe's hand, "of 180", a 4dp slider with a gold-leaf fill and a white knob, and the bookmark. Thumbnails, tabs and text live in the pulled-up sheet.
 - **LargeTitleScreen**: the iOS large title that scrolls under a frosted bar where a small centred title fades in.
 - **IssueCover / PigmentCover**: scans' first pages, or a pigment gradient with masthead and the year in the scribe's hand. Covers fly into the issue screen as a shared element.
 - **Gloss callout** (the signature): tapping a box sweeps gold leaf under it left to right, the box fills with a gold wash, and a dark card with the English (and the Japanese, smaller) grows out of it, placed below the box when there's room and above otherwise. It stays crisp at any zoom and opens the full page on tap.
@@ -189,7 +191,7 @@ Chosen October 2026 to give Gloss a personality of its own. It sits on top of ev
 
 ## Do's and Don'ts
 
-- Do keep gold for glossing only. If something isn't a translation, highlight or page number, it isn't gold.
+- Do keep gold for glossing only. If something isn't a translation, highlight, page number, reading over kanji or the page slider's progress, it isn't gold.
 - Do let the scan lead: hide chrome, never cover the selected box with the callout.
 - Do say plainly that translations are machine-made.
 - Don't add Material ripples, FABs or elevation shadows on cards.

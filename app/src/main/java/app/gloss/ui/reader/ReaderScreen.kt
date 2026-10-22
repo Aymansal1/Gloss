@@ -240,6 +240,11 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
     BackHandler(enabled = sheetState.bottomSheetState.currentValue == SheetValue.Expanded) {
         scope.launch { sheetState.bottomSheetState.partialExpand() }
     }
+    // Back puts an open gloss away before it leaves the issue.
+    BackHandler(enabled = selection != null && sheetState.bottomSheetState.currentValue != SheetValue.Expanded) {
+        selection = null
+        hitRegion = null
+    }
 
     // Switching between single pages and spreads rebuilds the pager on the same page.
     key(useSpreads) {

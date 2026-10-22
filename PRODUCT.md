@@ -23,6 +23,7 @@ The scan stays the hero. Translation is a gloss laid over the original rather th
 ## Capabilities and Constraints
 - Kotlin + Jetpack Compose, minSdk 33, single-activity.
 - Reader: paged scans, tap-to-translate, manga mode (English set into each box), zoom, RTL paging, text-only installs, bookmarks, continue reading, text size.
+- Learn: an offline JMdict/KANJIDIC2/KanjiVG dictionary bundled in the app, a Learn panel behind each gloss (words, readings, meanings, voice via system TTS, kanji and stroke order), saved words with Anki export, a gamer-slang glossary, reading level per issue.
 - Search: on-device index, CJK bigrams, phrases, exclusions, prefixes.
 - Translations are AI-generated and can be wrong; the app says so.
 - No accounts, no analytics, no ads.
@@ -38,7 +39,7 @@ Real catalog data and scans are fetched at runtime. There are no screenshots, te
 ## Product Principles
 1. The page leads. Chrome gets out of the way while reading.
 2. Translation is one tap, never a mode switch you have to hunt for.
-3. Quick and no-nonsense: no onboarding walls, no accounts, nothing between launch and the last page you read.
+3. Quick and no-nonsense: no accounts, nothing between launch and the last page you read. A first install gets one skippable welcome screen, nothing more.
 4. Offline is the normal case, not an error state.
 5. Honest about machine translation.
 
