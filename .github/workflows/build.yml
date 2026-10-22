@@ -3,7 +3,7 @@ name: Build
 on:
   push:
     branches: [main, wip]
-    paths-ignore: ['**.md', 'docs/**', 'licenses/**']
+    paths-ignore: ['**.md', 'docs/**', 'licenses/**', 'site/**', '.github/workflows/pages.yml']
   pull_request:
   workflow_dispatch:
 

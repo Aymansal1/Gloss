@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gloss</title>
+<meta name="description" content="Read Gaming Alexandria's scanned Japanese game magazines on Android, with the English one tap away.">
+<meta property="og:title" content="Gloss: Japanese game magazines, glossed in English">
+<meta property="og:description" content="Tap any text on the scan and its English appears beside it. Free, no ads, no accounts.">
+<meta property="og:image" content="assets/tour.jpg">
+<meta name="theme-color" content="#F3EEE3">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=Inter:opsz,wght@14..32,400..800&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #F3EEE3;
+  --paper-2: #E9E2D2;
+  --ink: #0B0D1C;
+  --ink-2: #4B4F6B;
+  --lapis: #2338C2;
+  --lapis-deep: #141E78;
+  --lapis-night: #5068FF;
+  --vermilion: #D5412A;
+  --gold-hi: #F6D886;
+  --gold: #E3B341;
+  --gold-lo: #B98320;
+  --night: #070A1C;
+  --gutter: clamp(16px, 4vw, 40px);
+  --display: "Archivo", "Arial Narrow", sans-serif;
+  --text: "Inter", system-ui, sans-serif;
+  --scribe: "Instrument Serif", Georgia, serif;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 17px/1.55 var(--text);
+  overflow-x: hidden;
+}
+img { max-width: 100%; display: block; }
+a { color: inherit; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 var(--gutter); }
+
+/* Print furniture */
+.halftone {
+  background-image: radial-gradient(circle at center, currentColor 0 34%, transparent 36%);
+  background-size: 7px 7px;
+}
+.reg {
+  position: absolute; width: 22px; height: 22px; color: var(--ink); opacity: .55; pointer-events: none;
+}
+.reg::before, .reg::after { content: ""; position: absolute; background: currentColor; }
+.reg::before { left: 50%; top: 0; bottom: 0; width: 1px; }
+.reg::after { top: 50%; left: 0; right: 0; height: 1px; }
+.reg i { position: absolute; inset: 5px; border: 1px solid currentColor; border-radius: 50%; }
+.colorbar { display: flex; height: 10px; }
+.colorbar span { flex: 1; }
+.leaf { background: linear-gradient(100deg, var(--gold-hi), var(--gold) 55%, var(--gold-lo)); }
+
+/* Dateline strip */
+.dateline {
+  border-bottom: 2px solid var(--ink);
+  font: 700 12px/1 var(--display); font-stretch: 85%; letter-spacing: .08em; text-transform: uppercase;
+}
+.dateline .wrap { display: flex; gap: 18px; justify-content: space-between; align-items: center; padding-top: 10px; padding-bottom: 10px; }
+.dateline .wrap > span { white-space: nowrap; }
+.dateline .mid { overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 640px) { .dateline .mid { display: none; } }
+
+/* Cover */
+.cover { position: relative; padding: 36px 0 64px; overflow: hidden; }
+.cover .reg.tl { top: 14px; left: 14px; } .cover .reg.tr { top: 14px; right: 14px; }
+.masthead { position: relative; margin: 6px 0 0; line-height: 0; }
+.masthead img { width: min(440px, 72vw); height: auto; position: relative; }
+.masthead .ghost {
+  position: absolute; left: 0; top: 0; width: min(440px, 72vw); height: auto;
+  filter: brightness(0) saturate(100%) invert(31%) sepia(80%) saturate(2200%) hue-rotate(352deg);
+  transform: translate(5px, 4px); opacity: .9; mix-blend-mode: multiply;
+}
+.tagline {
+  font: 800 clamp(22px, 3.6vw, 38px)/1.02 var(--display); font-stretch: 72%;
+  text-transform: uppercase; letter-spacing: -.005em; margin: 18px 0 0; max-width: 21ch;
+}
+.tagline em { font: italic 400 1.18em/0.9 var(--scribe); text-transform: none; letter-spacing: 0; }
+.cover-main { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 40px 56px; align-items: center; }
+.lines { display: grid; grid-template-columns: 1fr 1fr; gap: 22px 28px; margin-top: 38px; }
+.line { border-top: 2px solid var(--ink); padding-top: 10px; }
+.line b {
+  display: block; font: 900 clamp(22px, 2.6vw, 30px)/1 var(--display); font-stretch: 68%; text-transform: uppercase;
+}
+.line b .n { color: var(--vermilion); margin-right: 6px; }
+.line p { margin: 6px 0 0; font-size: 15px; line-height: 1.45; color: var(--ink-2); }
+.star { position: relative; }
+.star .shot { position: relative; width: min(100%, 330px); margin: 0 auto; }
+.star .shot img { width: 100%; height: auto; filter: drop-shadow(0 28px 34px rgba(11, 13, 28, .38)); }
+.star .dots { position: absolute; inset: -26px -40px auto auto; width: 180px; height: 180px; color: var(--lapis); opacity: .9; z-index: -1; border-radius: 50%; }
+.price {
+  position: absolute; right: -18px; top: -26px; width: 116px; height: 116px; z-index: 2;
+  display: grid; place-items: center; text-align: center; color: var(--ink);
+  transform: rotate(10deg);
+}
+.price svg { position: absolute; inset: 0; }
+.price span { position: relative; font: 900 15px/1 var(--display); font-stretch: 70%; text-transform: uppercase; }
+.price span strong { display: block; font-size: 38px; letter-spacing: -.02em; }
+.buy { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 18px; margin-top: 28px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 26px;
+  border-radius: 999px; background: var(--lapis); color: #fff; text-decoration: none;
+  font: 600 17px/1 var(--text); box-shadow: 0 10px 24px -10px var(--lapis);
+  transition: transform .2s cubic-bezier(.2, .8, .2, 1), background .2s;
+}
+.btn:hover { background: var(--lapis-deep); }
+.btn:active { transform: scale(.97); }
+.btn.ghosted { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
+.buy small { color: var(--ink-2); font-size: 14px; }
+.barcode {
+  position: absolute; left: -8px; bottom: 34px; z-index: 2; display: flex; align-items: flex-end; gap: 8px;
+  background: #fff; padding: 8px 10px; box-shadow: 0 6px 16px -8px rgba(11, 13, 28, .5); transform: rotate(-5deg);
+}
+.barcode svg { height: 44px; width: auto; }
+.barcode span { font: 700 11px/1.2 var(--display); font-stretch: 80%; letter-spacing: .1em; text-transform: uppercase; }
+
+@media (max-width: 900px) {
+  .cover-main { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+  .cover-copy { display: contents; }
+  .masthead { order: 1; } .tagline { order: 2; } .buy { order: 3; } .star { order: 4; } .lines { order: 5; }
+  .star { max-width: 290px; margin: 40px auto 0; width: 100%; }
+  .price { right: -6px; }
+  .barcode { left: 0; }
+}
+@media (max-width: 560px) { .lines { grid-template-columns: 1fr; } }
+
+/* Contents */
+.section-head { display: flex; align-items: baseline; gap: 16px; border-bottom: 6px solid var(--ink); padding-bottom: 8px; margin: 0 0 28px; }
+.section-head h2 { margin: 0; font: 900 clamp(40px, 7vw, 76px)/.9 var(--display); font-stretch: 62%; text-transform: uppercase; }
+.section-head span { font: italic 400 22px/1 var(--scribe); color: var(--ink-2); }
+.contents { padding: 64px 0 24px; border-top: 2px solid var(--ink); }
+.toc { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0 40px; }
+.toc li { border-bottom: 1px solid rgba(11, 13, 28, .2); }
+.toc a { display: grid; grid-template-columns: 54px 1fr; gap: 12px; padding: 16px 0; text-decoration: none; }
+.toc .pg { font: italic 400 30px/1 var(--scribe); color: var(--vermilion); }
+.toc b { font: 800 21px/1.1 var(--display); font-stretch: 75%; text-transform: uppercase; }
+.toc p { margin: 4px 0 0; font-size: 15px; color: var(--ink-2); }
+.toc a:hover b { text-decoration: underline; text-decoration-color: var(--gold); text-decoration-thickness: 3px; }
+
+/* Spreads */
+.spread { position: relative; background: var(--night); color: #EEF0FA; padding: 72px 0; margin-top: 64px; overflow: hidden; }
+.spread .reg { color: #EEF0FA; }
+.spread .reg.tl { top: 16px; left: 16px; } .spread .reg.br { bottom: 16px; right: 16px; }
+.spread .folio { font: 700 12px/1 var(--display); font-stretch: 85%; letter-spacing: .1em; text-transform: uppercase; color: #9DA2C6; display: flex; justify-content: space-between; gap: 16px; margin-bottom: 26px; }
+.spread h3 { margin: 0; font: 900 clamp(40px, 7.4vw, 92px)/.88 var(--display); font-stretch: 62%; text-transform: uppercase; max-width: 12ch; }
+.spread h3 em { font: italic 400 1.04em/0.8 var(--scribe); text-transform: none; color: var(--gold); }
+.spread .deck { font-size: 19px; line-height: 1.5; color: #C9CCE4; max-width: 40ch; margin: 18px 0 0; }
+.spread .art { margin-top: 40px; border-radius: 18px; overflow: hidden; box-shadow: 0 30px 80px -30px #000; }
+.spread .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 26px; margin-top: 36px; }
+.spread .cols p { margin: 0; color: #C9CCE4; font-size: 16px; }
+.spread .cols b { display: block; color: #fff; font: 800 18px/1.2 var(--display); font-stretch: 80%; text-transform: uppercase; margin-bottom: 6px; }
+.spread.paper { background: var(--paper-2); color: var(--ink); }
+.spread.paper .reg { color: var(--ink); }
+.spread.paper .folio { color: var(--ink-2); }
+.spread.paper .deck, .spread.paper .cols p { color: var(--ink-2); }
+.spread.paper .cols b { color: var(--ink); }
+.spread.paper h3 em { color: var(--gold-lo); }
+.gloss-mark { background: linear-gradient(transparent 58%, rgba(227, 179, 65, .55) 58%); padding: 0 .06em; }
+
+/* Letters (FAQ) */
+.letters { padding: 72px 0 24px; }
+.qa { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0 44px; }
+.qa div { border-top: 2px solid var(--ink); padding: 14px 0 26px; }
+.qa h4 { margin: 0 0 8px; font: 800 20px/1.15 var(--display); font-stretch: 78%; text-transform: uppercase; }
+.qa h4::before { content: "Q. "; color: var(--vermilion); }
+.qa p { margin: 0; color: var(--ink-2); font-size: 16px; }
+.qa code { font-size: .9em; background: var(--paper-2); padding: 1px 5px; border-radius: 4px; }
+
+/* Colophon */
+.colophon { margin-top: 56px; border-top: 6px solid var(--ink); padding: 26px 0 40px; }
+.colophon .wrap { display: grid; grid-template-columns: auto 1fr auto; gap: 24px 40px; align-items: start; }
+.colophon img { width: 120px; height: auto; }
+.colophon p { margin: 0; font-size: 14px; color: var(--ink-2); max-width: 62ch; }
+.colophon nav { display: grid; gap: 8px; font: 700 14px/1.2 var(--display); font-stretch: 85%; text-transform: uppercase; letter-spacing: .06em; }
+.colophon nav a { text-decoration: none; }
+.colophon nav a:hover { color: var(--lapis); }
+@media (max-width: 760px) { .colophon .wrap { grid-template-columns: 1fr; } }
+
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="colorbar" aria-hidden="true">
+  <span style="background:#00A3E0"></span><span style="background:#D6247C"></span><span style="background:#F3D200"></span><span style="background:var(--ink)"></span>
+  <span style="background:var(--lapis)"></span><span style="background:var(--vermilion)"></span><span class="leaf"></span><span style="background:var(--paper-2)"></span>
+</div>
+
+<header class="dateline">
+  <div class="wrap">
+    <span>Vol. 1 &nbsp;No. <span data-issue>&mdash;</span></span>
+    <span class="mid">The reader for Japanese game magazines, glossed in English</span>
+    <span>For Android &nbsp;·&nbsp; ¥0</span>
+  </div>
+</header>
+
+<main>
+  <section class="cover">
+    <span class="reg tl" aria-hidden="true"><i></i></span>
+    <span class="reg tr" aria-hidden="true"><i></i></span>
+    <div class="wrap">
+      <div class="cover-main">
+        <div class="cover-copy">
+          <h1 class="masthead">
+            <img class="ghost" src="assets/wordmark.svg" alt="" aria-hidden="true">
+            <img src="assets/wordmark.svg" alt="Gloss">
+          </h1>
+          <p class="tagline">Japanese game magazines, with <em>the English</em> one tap away</p>
+          <div class="buy">
+            <a class="btn" data-apk href="https://github.com/Aymansal1/Gloss/releases/latest">
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v9.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 1 1 1.4-1.4L11 13.6V4a1 1 0 0 1 1-1Zm-7 15a1 1 0 0 1 1 1v1h12v-1a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Z"/></svg>
+              Download for Android
+            </a>
+            <a class="btn ghosted" href="https://github.com/Aymansal1/Gloss">Source on GitHub</a>
+            <small data-meta>Android 13 or newer</small>
+          </div>
+          <div class="lines">
+          <div class="line">
+            <b><span class="n">01</span>Tap any text</b>
+            <p>Touch a line on the original scan and its English appears right beside it, laid over the page like a gloss.</p>
+          </div>
+          <div class="line">
+            <b><span class="n">02</span>Famitsu, Beep!, LOGiN</b>
+            <p>Browse Gaming Alexandria's archive of scanned magazines and download an issue in a tap.</p>
+          </div>
+          <div class="line">
+            <b><span class="n">03</span>Search the Japanese</b>
+            <p>Find words across every downloaded issue, in English or Japanese, even in the middle of a sentence.</p>
+          </div>
+          <div class="line">
+            <b><span class="n">04</span>No accounts. Offline.</b>
+            <p>Nothing to sign up for and nothing tracking you. Downloaded issues read anywhere.</p>
+          </div>
+          </div>
+        </div>
+        <div class="star">
+          <div class="dots halftone" aria-hidden="true"></div>
+          <div class="price" aria-hidden="true">
+            <svg viewBox="0 0 100 100"><polygon fill="#F3D200" stroke="#0B0D1C" stroke-width="1.5" points="50,2 58,14 72,7 74,22 89,20 85,35 98,42 88,53 97,66 82,70 84,85 69,83 63,97 51,88 39,97 33,83 18,85 20,70 5,66 14,53 3,42 16,35 12,20 27,22 29,7 43,14"/></svg>
+            <span>Free<strong>¥0</strong>No ads</span>
+          </div>
+          <div class="barcode" aria-hidden="true">
+            <svg viewBox="0 0 92 40" id="bars"></svg>
+            <span>Open<br>source</span>
+          </div>
+          <div class="shot">
+            <img src="assets/cover-phone.png" width="360" height="760" alt="Gloss on a phone: the Discover tab with Continue reading and shelves of magazine covers">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="contents" id="contents">
+    <div class="wrap">
+      <div class="section-head"><h2>Contents</h2><span>this issue</span></div>
+      <ol class="toc">
+        <li><a href="#gloss"><span class="pg">4</span><span><b>Tap to gloss</b><p>The English, right beside the Japanese.</p></span></a></li>
+        <li><a href="#whole-page"><span class="pg">8</span><span><b>The whole page in English</b><p>Every box translated at once, sized to fit.</p></span></a></li>
+        <li><a href="#search"><span class="pg">12</span><span><b>Search that reads Japanese</b><p>Mid-sentence matches a plain index would miss.</p></span></a></li>
+        <li><a href="#letters"><span class="pg">16</span><span><b>Readers' letters</b><p>Installing, accuracy, and where the scans come from.</p></span></a></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="spread" id="gloss">
+    <span class="reg tl" aria-hidden="true"><i></i></span>
+    <span class="reg br" aria-hidden="true"><i></i></span>
+    <div class="wrap">
+      <div class="folio"><span>Feature</span><span>p. 4</span></div>
+      <h3>Tap the page. <em>Read it.</em></h3>
+      <p class="deck">The scan stays the star. Tap any block of text and a sweep of gold leaf marks it, then the English opens beside it, with the Japanese underneath if you want to compare.</p>
+      <div class="art"><img src="assets/tour.jpg" alt="Three phones: Discover, an issue page with its download button, and a tapped box on a scan with its English shown beside it" loading="lazy"></div>
+      <div class="cols">
+        <p><b>Continue where you were</b>Your last page, bookmarks and notes, kept on the phone.</p>
+        <p><b>Spreads, sideways</b>Turn the phone and facing pages meet at the gutter, the way they were printed.</p>
+        <p><b>Text-only downloads</b>Short on space? Get just the translation and read it as plain text.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="spread paper" id="whole-page">
+    <span class="reg tl" aria-hidden="true"><i></i></span>
+    <span class="reg br" aria-hidden="true"><i></i></span>
+    <div class="wrap">
+      <div class="folio"><span>Feature</span><span>p. 8</span></div>
+      <h3>The whole page, <em>in English</em></h3>
+      <p class="deck">One button sets the English into every box on the page, fitted to the space the Japanese took up, so you can read a spread straight through like a <span class="gloss-mark">local edition</span>.</p>
+      <div class="art"><img src="assets/reading.jpg" alt="A page with English set into every box, and a landscape phone showing two facing pages" loading="lazy"></div>
+    </div>
+  </section>
+
+  <section class="spread" id="search">
+    <span class="reg tl" aria-hidden="true"><i></i></span>
+    <span class="reg br" aria-hidden="true"><i></i></span>
+    <div class="wrap">
+      <div class="folio"><span>Feature</span><span>p. 12</span></div>
+      <h3>Search that <em>reads</em> Japanese</h3>
+      <p class="deck">Japanese doesn't put spaces between words, so a plain index misses a name in the middle of a sentence. Gloss indexes overlapping pairs of characters, so it finds it.</p>
+      <div class="art"><img src="assets/search.jpg" alt="Searching マリオ: Gloss looks for マリ and リオ and finds it inside スーパーマリオ3の攻略" loading="lazy"></div>
+    </div>
+  </section>
+
+  <section class="letters" id="letters">
+    <div class="wrap">
+      <div class="section-head"><h2>Letters</h2><span>from readers</span></div>
+      <div class="qa">
+        <div>
+          <h4>How do I install it?</h4>
+          <p>Gloss isn't on the Play Store. Download the APK on your phone, open it, and allow your browser to install apps when Android asks. Updates show up inside the app.</p>
+        </div>
+        <div>
+          <h4>Are the translations right?</h4>
+          <p>They're machine-made, so treat them as a good first read rather than gospel. The original scan is always there to check against, and the app says so.</p>
+        </div>
+        <div>
+          <h4>Where do the magazines come from?</h4>
+          <p>From <a href="https://www.gamingalexandria.com/">Gaming Alexandria</a>'s archive of scans and transcriptions, the same files their desktop app reads. Gloss isn't affiliated with them.</p>
+        </div>
+        <div>
+          <h4>Does it track me?</h4>
+          <p>No accounts, no analytics, no ads. Your library, bookmarks and reading place stay on your phone.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="colophon">
+  <div class="wrap">
+    <img src="assets/wordmark.svg" alt="Gloss">
+    <p>Gloss is free and open source. Scans, transcriptions and translations are Gaming Alexandria's; please support their preservation work. Magazine names and covers belong to their publishers.</p>
+    <nav aria-label="Links">
+      <a href="https://github.com/Aymansal1/Gloss/releases/latest">Download</a>
+      <a href="https://github.com/Aymansal1/Gloss">GitHub</a>
+      <a href="https://www.gamingalexandria.com/">Gaming Alexandria</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+// Bars for the cover barcode, the same every visit.
+(function () {
+  var svg = document.getElementById('bars'), x = 0, seed = 7;
+  function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+  var out = '';
+  while (x < 92) {
+    var w = 1 + Math.floor(rnd() * 3);
+    out += '<rect x="' + x + '" y="0" width="' + w + '" height="40" fill="#0B0D1C"/>';
+    x += w + 1 + Math.floor(rnd() * 2);
+  }
+  svg.innerHTML = out;
+})();
+
+// The latest release: its issue number, a direct APK link and its size.
+fetch('https://api.github.com/repos/Aymansal1/Gloss/releases/latest')
+  .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+  .then(function (rel) {
+    var tag = (rel.tag_name || '').replace(/^v/, '');
+    var no = tag.split('.').pop();
+    document.querySelectorAll('[data-issue]').forEach(function (el) { el.textContent = no; });
+    var apk = (rel.assets || []).filter(function (a) { return /\.apk$/i.test(a.name); })[0];
+    if (apk) {
+      document.querySelectorAll('[data-apk]').forEach(function (el) { el.href = apk.browser_download_url; });
+      var mb = (apk.size / 1048576).toFixed(1);
+      document.querySelector('[data-meta]').textContent = 'Version ' + tag + ' · ' + mb + ' MB · Android 13 or newer';
+    }
+  })
+  .catch(function () {});
+</script>
+</body>
+</html>
