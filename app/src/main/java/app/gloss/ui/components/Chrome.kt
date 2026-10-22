@@ -234,12 +234,13 @@ fun BackChevron(label: String, onClick: () -> Unit, modifier: Modifier = Modifie
 data class TabItem(val label: String, val icon: ImageVector, val selectedIcon: ImageVector = icon)
 
 /**
- * The floating tab bar: a frosted capsule of tabs with a lapis-tinted pill that springs to the
+ * The floating tab bar: a liquid glass capsule of tabs with a lapis-tinted pill that springs to the
  * selected one, and Search as its own round button beside it, the way iOS 26 lays it out.
  */
 @Composable
 fun GlassTabBar(
     haze: HazeState,
+    backdrop: GlassBackdrop,
     tabs: List<TabItem>,
     selected: Int,
     onSelect: (Int) -> Unit,
@@ -261,7 +262,7 @@ fun GlassTabBar(
                 .weight(1f)
                 .height(TabBarHeight)
                 .shadow(18.dp, CircleShape, clip = false, ambientColor = Color.Black.copy(alpha = 0.18f), spotColor = Color.Black.copy(alpha = 0.22f))
-                .glass(haze, CircleShape)
+                .liquidGlass(backdrop, haze, CircleShape)
                 .padding(4.dp),
         ) {
             val w = maxWidth / tabs.size
@@ -303,7 +304,7 @@ fun GlassTabBar(
             Modifier
                 .size(TabBarHeight)
                 .shadow(18.dp, CircleShape, clip = false, ambientColor = Color.Black.copy(alpha = 0.18f), spotColor = Color.Black.copy(alpha = 0.22f))
-                .glass(haze, CircleShape)
+                .liquidGlass(backdrop, haze, CircleShape)
                 .background(searchBg)
                 .pressable(onSearch, scaleTo = 0.88f, haptic = !searchSelected, role = Role.Tab)
                 .semantics { contentDescription = search.label; this.selected = searchSelected },

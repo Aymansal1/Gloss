@@ -58,6 +58,8 @@ import app.gloss.ui.components.CrashReportDialog
 import app.gloss.ui.components.WhatsNew
 import app.gloss.ui.components.WhatsNewDialog
 import app.gloss.ui.components.GlassTabBar
+import app.gloss.ui.components.glassSource
+import app.gloss.ui.components.rememberGlassBackdrop
 import app.gloss.ui.components.LocalBottomBarPadding
 import app.gloss.ui.components.LocalSharedScope
 import app.gloss.ui.components.ProvideNavScope
@@ -197,6 +199,7 @@ private fun Home(nav: Nav) {
     // Back from Library or Search returns to Discover before leaving the app.
     BackHandler(enabled = tab != DISCOVER) { tab = DISCOVER }
     val haze = remember { HazeState() }
+    val backdrop = rememberGlassBackdrop()
     val tabs = remember {
         listOf(
             TabItem("Discover", Icons.Outlined.AutoStories, Icons.Rounded.AutoStories),
@@ -205,7 +208,7 @@ private fun Home(nav: Nav) {
     }
 
     Box(Modifier.fillMaxSize().background(Gloss.colors.ground)) {
-        Box(Modifier.fillMaxSize().hazeSource(haze)) {
+        Box(Modifier.fillMaxSize().glassSource(backdrop).hazeSource(haze)) {
             CompositionLocalProvider(LocalBottomBarPadding provides TabBarClearance) {
                 AnimatedContent(
                     targetState = tab,
@@ -224,6 +227,7 @@ private fun Home(nav: Nav) {
         }
         GlassTabBar(
             haze = haze,
+            backdrop = backdrop,
             tabs = tabs,
             selected = if (tab == SEARCH) -1 else tab,
             onSelect = { i -> if (i == tab) reselect[i].tryEmit(Unit) else tab = i },

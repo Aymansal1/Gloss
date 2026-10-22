@@ -157,7 +157,7 @@ In the reader, the page fills the screen; chrome sits over it and hides with a t
 
 ## Elevation & Depth
 
-Depth comes from material, not shadow. Bars, the tab bar, reader controls and the reader sheet are frosted glass (Haze, `CupertinoMaterials.regular`) with a 0.6dp light edge. Real shadows appear in two places only: covers (`coverShadow`) and the gloss callout, both because they are physical objects lifted off the page.
+Depth comes from material, not shadow. Bars and the reader sheet are frosted glass (Haze, `CupertinoMaterials.regular`) with a 0.6dp light edge. The things you press that float over content (the tab bar, Search, the reader's buttons and title capsule) are liquid glass (`liquidGlass`): a light blur, a saturation lift, and an AGSL lens that bends the picture near the rim with a faint colour split, under a thin tint and a rim lit from the top left. Phones or tests that can't run the shader get the frosted glass instead. Real shadows appear in two places only: covers (`coverShadow`) and the gloss callout, both because they are physical objects lifted off the page.
 
 ## Shapes
 

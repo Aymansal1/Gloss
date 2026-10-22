@@ -111,7 +111,11 @@ import app.gloss.ui.components.Hairline
 import app.gloss.ui.components.MarkdownBlock
 import app.gloss.ui.components.RoundIconButton
 import app.gloss.ui.components.SegmentedControl
+import app.gloss.ui.components.GlassBackdrop
 import app.gloss.ui.components.glass
+import app.gloss.ui.components.glassSource
+import app.gloss.ui.components.liquidGlass
+import app.gloss.ui.components.rememberGlassBackdrop
 import app.gloss.ui.components.pressable
 import app.gloss.ui.container
 import app.gloss.ui.prettyDate
@@ -204,6 +208,7 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
 
     val scope = rememberCoroutineScope()
     val haze = remember { HazeState() }
+    val backdrop = rememberGlassBackdrop()
     val sheetState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(initialValue = SheetValue.PartiallyExpanded),
     )
@@ -316,7 +321,7 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
                     beyondViewportPageCount = 1,
                     userScrollEnabled = !zoomed,
                     key = { screens[it].first() },
-                    modifier = Modifier.fillMaxSize().hazeSource(haze),
+                    modifier = Modifier.fillMaxSize().glassSource(backdrop).hazeSource(haze),
                 ) { index ->
                     val pages = screens[index]
                     val calloutBottom = if (chrome) peek + 8.dp else navInset + 16.dp
@@ -376,6 +381,7 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
                 ReaderTopBar(
                     visible = chrome,
                     haze = haze,
+                    backdrop = backdrop,
                     title = issue.magazineName,
                     subtitle = prettyDate(issue.title),
                     hasScan = issue.hasScan,
@@ -418,6 +424,7 @@ private fun Message(text: String) {
 private fun ReaderTopBar(
     visible: Boolean,
     haze: HazeState,
+    backdrop: GlassBackdrop,
     title: String,
     subtitle: String,
     hasScan: Boolean,
@@ -440,11 +447,11 @@ private fun ReaderTopBar(
                 .padding(horizontal = 10.dp, vertical = 6.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                GlassCircle(haze, Icons.AutoMirrored.Rounded.KeyboardArrowLeft, "Back", onBack)
+                GlassCircle(haze, backdrop, Icons.AutoMirrored.Rounded.KeyboardArrowLeft, "Back", onBack)
                 Column(
                     Modifier
                         .weight(1f)
-                        .glass(haze, CircleShape, tint = g.raised)
+                        .liquidGlass(backdrop, haze, CircleShape, tint = g.raised)
                         .padding(horizontal = 18.dp, vertical = 7.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
@@ -454,25 +461,25 @@ private fun ReaderTopBar(
                 }
                 if (hasScan) {
                     GlassCircle(
-                        haze, Icons.Rounded.Translate,
+                        haze, backdrop, Icons.Rounded.Translate,
                         if (mangaMode) "Show the original page" else "Set the English on the page",
                         onManga, active = mangaMode,
                     )
                 }
-                GlassText(haze, "Aa", "Reading options", onOptions)
+                GlassText(haze, backdrop, "Aa", "Reading options", onOptions)
             }
         }
     }
 }
 
 @Composable
-private fun GlassCircle(haze: HazeState, icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit, active: Boolean = false) {
+private fun GlassCircle(haze: HazeState, backdrop: GlassBackdrop, icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit, active: Boolean = false) {
     val g = Gloss.colors
     Box(
         Modifier
             .size(44.dp)
             .pressable(onClick, scaleTo = 0.88f, onClickLabel = label, role = Role.Button)
-            .then(if (active) Modifier.clip(CircleShape).background(Brush.linearGradient(GoldLeaf.stops)) else Modifier.glass(haze, CircleShape, tint = g.raised)),
+            .then(if (active) Modifier.clip(CircleShape).background(Brush.linearGradient(GoldLeaf.stops)) else Modifier.liquidGlass(backdrop, haze, CircleShape, tint = g.raised)),
         contentAlignment = Alignment.Center,
     ) {
         Icon(icon, contentDescription = label, tint = if (active) Color(0xFF2A1D05) else g.text, modifier = Modifier.size(22.dp))
@@ -480,13 +487,13 @@ private fun GlassCircle(haze: HazeState, icon: androidx.compose.ui.graphics.vect
 }
 
 @Composable
-private fun GlassText(haze: HazeState, text: String, label: String, onClick: () -> Unit) {
+private fun GlassText(haze: HazeState, backdrop: GlassBackdrop, text: String, label: String, onClick: () -> Unit) {
     val g = Gloss.colors
     Box(
         Modifier
             .size(44.dp)
             .pressable(onClick, scaleTo = 0.88f, onClickLabel = label, role = Role.Button)
-            .glass(haze, CircleShape, tint = g.raised)
+            .liquidGlass(backdrop, haze, CircleShape, tint = g.raised)
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
