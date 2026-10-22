@@ -1,16 +1,21 @@
 package app.gloss.screens
 
 import android.graphics.Bitmap
+import android.graphics.BitmapShader
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
 import android.graphics.ColorSpace
 import android.graphics.HardwareRenderer
+import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.PixelFormat
 import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.RenderNode
 import android.graphics.RuntimeShader
+import android.graphics.Shader
 import android.hardware.HardwareBuffer
 import android.media.ImageReader
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -45,8 +50,8 @@ class LiquidLensTest {
     }
 
     /**
-     * The real effect chain (blur, lens, saturation) drawn by the GPU pipeline over coloured
-     * stripes and big type, with the tint and rim on top, so the bend at the rim shows.
+     * The lens drawn by the GPU pipeline over coloured stripes and big type, with the tint and
+     * rim on top, so the bend at the rim and the colour split show.
      */
     @Test fun lensBendsTheRim() {
         val w = 1080
@@ -70,16 +75,22 @@ class LiquidLensTest {
             shader.setFloatUniform("depth", minOf(48f, r))
             shader.setFloatUniform("bend", 42f)
             shader.setFloatUniform("spread", 0.12f)
-            val node = RenderNode("pane").apply {
-                setPosition(left, top, left + pw, top + ph)
-                setRenderEffect(LiquidLens.effect(shader, 8f))
+            // Robolectric can't run a shader as a RenderEffect, so the lens paints the scene
+            // directly here, with the same saturation lift and no blur.
+            shader.setInputShader("content", BitmapShader(scene, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply {
+                setLocalMatrix(Matrix().apply { setTranslate(-left.toFloat(), -top.toFloat()) })
+            })
+            val lens = Paint().apply {
+                this.shader = shader
+                colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(1.5f) })
             }
-            node.beginRecording().apply { translate(-left.toFloat(), -top.toFloat()); drawBitmap(scene, 0f, 0f, null) }
-            node.endRecording()
             val clip = Path().apply { addRoundRect(RectF(left.toFloat(), top.toFloat(), (left + pw).toFloat(), (top + ph).toFloat()), r, r, Path.Direction.CW) }
             canvas.save()
             canvas.clipPath(clip)
-            canvas.drawRenderNode(node)
+            canvas.save()
+            canvas.translate(left.toFloat(), top.toFloat())
+            canvas.drawRect(0f, 0f, pw.toFloat(), ph.toFloat(), lens)
+            canvas.restore()
             canvas.drawPath(clip, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(110, 255, 255, 255) })
             canvas.drawPath(clip, Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 6f; color = Color.argb(220, 255, 255, 255) })
             canvas.restore()
