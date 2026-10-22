@@ -9,6 +9,8 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -80,10 +82,28 @@ val LocalBottomBarPadding = compositionLocalOf { 0.dp }
 val LocalSharedScope = staticCompositionLocalOf<SharedTransitionScope?> { null }
 val LocalNavScope = staticCompositionLocalOf<AnimatedVisibilityScope?> { null }
 
-/** Provides [scope] as the destination's [AnimatedVisibilityScope] for shared covers. */
+/**
+ * Provides [scope] as the destination's [AnimatedVisibilityScope] for shared covers.
+ *
+ * Touches are held while the screen is pushing or popping, as on iOS. Scrolling a list under a
+ * cover that's flying back into it moved its landing spot every frame, so the cover bounced
+ * around and drew over the header.
+ */
 @Composable
 fun ProvideNavScope(scope: AnimatedVisibilityScope, content: @Composable () -> Unit) {
-    CompositionLocalProvider(LocalNavScope provides scope, content = content)
+    val moving = scope.transition.isRunning
+    CompositionLocalProvider(LocalNavScope provides scope) {
+        Box(
+            Modifier.fillMaxSize().then(
+                if (!moving) Modifier
+                else Modifier.pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) awaitPointerEvent(PointerEventPass.Initial).changes.forEach { it.consume() }
+                    }
+                },
+            ),
+        ) { content() }
+    }
 }
 
 /** Ties this element to the same [key] on the next screen, so it flies across the transition. */
