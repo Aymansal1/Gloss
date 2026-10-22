@@ -29,10 +29,8 @@ import app.gloss.ui.theme.GoldLeaf
  */
 object WhatsNew {
     val notes = listOf(
-        "Downloads pick up again on their own when your connection drops, and say plainly when your phone is out of space.",
-        "Long titles and translations stay readable, even with large system text.",
-        "Long glosses fade out at the bottom when there's more to scroll.",
-        "The reading options button now works with TalkBack.",
+        "Covers are books now: on an issue's page, drag the cover sideways to spin it and see the spine and back. Downloaded issues show their real back page.",
+        "Scrolling right after going back no longer sends covers drifting around the screen.",
     )
 
     private const val PREFS = "whats-new"
