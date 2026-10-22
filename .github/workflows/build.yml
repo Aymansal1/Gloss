@@ -69,8 +69,10 @@ jobs:
       # Screenshot tests write PNGs of the real screens. Each push publishes them to the
       # `screenshots` branch (one commit, replaced each time) so they can be looked at
       # without downloading artifacts.
+      # Screenshots are a convenience; a clash between wip and main pushing at once mustn't stop the release.
       - name: Publish screenshots
         if: always() && github.event_name == 'push'
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -90,7 +92,7 @@ jobs:
           fi
           git add -A
           git commit -qm "Screenshots from ${GITHUB_REF_NAME} at ${GITHUB_SHA::7}"
-          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" screenshots
+          for wait in 0 10 30; do sleep "$wait"; git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" screenshots && exit 0; done; exit 1
 
       # Signing key comes from repository secrets; forks and PRs build with the debug key.
       - name: Restore signing key
