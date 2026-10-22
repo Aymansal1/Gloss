@@ -9,8 +9,6 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,7 +43,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -55,6 +52,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -77,7 +78,6 @@ import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.materials.CupertinoMaterials
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
-import kotlinx.coroutines.delay
 
 /** Space the floating tab bar takes at the bottom of the home tabs (0 elsewhere). */
 val LocalBottomBarPadding = compositionLocalOf { 0.dp }
@@ -86,34 +86,30 @@ val LocalBottomBarPadding = compositionLocalOf { 0.dp }
 val LocalSharedScope = staticCompositionLocalOf<SharedTransitionScope?> { null }
 val LocalNavScope = staticCompositionLocalOf<AnimatedVisibilityScope?> { null }
 
-private const val HOLD_MS = 240L
+/** True once the list has been scrolled during a push or pop, so covers stop flying and stay put. */
+private val LocalCoversLanded = compositionLocalOf { false }
 
 /**
  * Provides [scope] as the destination's [AnimatedVisibilityScope] for shared covers.
  *
- * Touches are held for the first moment of a push or pop. Scrolling a list under a
- * cover that's flying back into it moved its landing spot every frame, so the cover bounced
- * around and drew over the header.
+ * Scrolling while a cover flies back used to move its landing spot every frame, so it chased
+ * the list around and drew over the header. Now the first scroll during the transition lets
+ * go of the flight and every cover sits in its own place in the list.
  */
 @Composable
 fun ProvideNavScope(scope: AnimatedVisibilityScope, content: @Composable () -> Unit) {
     val running = scope.transition.isRunning
-    // Only the first stretch: by then the cover is nearly home, and holding through the
-    // spring's long tail made the list feel stuck after going back.
-    var expired by remember(running) { mutableStateOf(false) }
-    if (running) LaunchedEffect(Unit) { delay(HOLD_MS); expired = true }
-    val moving = running && !expired
-    CompositionLocalProvider(LocalNavScope provides scope) {
-        Box(
-            Modifier.fillMaxSize().then(
-                if (!moving) Modifier
-                else Modifier.pointerInput(Unit) {
-                    awaitPointerEventScope {
-                        while (true) awaitPointerEvent(PointerEventPass.Initial).changes.forEach { it.consume() }
-                    }
-                },
-            ),
-        ) { content() }
+    var landed by remember(running) { mutableStateOf(false) }
+    val watch = remember(running) {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (running && available != Offset.Zero) landed = true
+                return Offset.Zero
+            }
+        }
+    }
+    CompositionLocalProvider(LocalNavScope provides scope, LocalCoversLanded provides landed) {
+        Box(Modifier.fillMaxSize().nestedScroll(watch)) { content() }
     }
 }
 
@@ -122,6 +118,7 @@ fun ProvideNavScope(scope: AnimatedVisibilityScope, content: @Composable () -> U
 fun Modifier.sharedCover(key: String): Modifier {
     val shared = LocalSharedScope.current ?: return this
     val nav = LocalNavScope.current ?: return this
+    if (LocalCoversLanded.current) return this
     return with(shared) {
         this@sharedCover.sharedElement(rememberSharedContentState(key), nav)
     }
