@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,7 +28,9 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -196,26 +200,46 @@ object SharedCover {
     var target by mutableStateOf<String?>(null)
 }
 
-/** Cover with its title underneath, for shelves and grids. */
+/** One line of a cover's long-press menu. */
+class TileAction(val label: String, val danger: Boolean = false, val run: () -> Unit)
+
+/** Cover with its title underneath, for shelves and grids. A long press opens [actions]. */
 @Composable
 fun CoverTile(
     info: CoverInfo,
     caption: String,
     modifier: Modifier = Modifier,
     badge: (@Composable () -> Unit)? = null,
+    actions: List<TileAction> = emptyList(),
     onClick: () -> Unit,
 ) {
-    Column(modifier.pressable({ SharedCover.target = info.id; onClick() }, scaleTo = 0.95f)) {
-        Box {
-            IssueCover(info, Modifier.fillMaxWidth().coverShadow())
-            if (badge != null) Box(Modifier.align(Alignment.TopEnd).padding(6.dp)) { badge() }
+    var menu by remember { mutableStateOf(false) }
+    val haptics = LocalHapticFeedback.current
+    val hold: (() -> Unit)? = if (actions.isEmpty()) null else ({
+        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+        menu = true
+    })
+    Box(modifier) {
+        Column(Modifier.pressable({ SharedCover.target = info.id; onClick() }, scaleTo = 0.95f, onLongClick = hold)) {
+            Box {
+                IssueCover(info, Modifier.fillMaxWidth().coverShadow())
+                if (badge != null) Box(Modifier.align(Alignment.TopEnd).padding(6.dp)) { badge() }
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                caption,
+                style = app.gloss.ui.theme.Gloss.type.footnote.copy(fontWeight = FontWeight(500)),
+                color = app.gloss.ui.theme.Gloss.colors.text,
+                maxLines = 2, overflow = TextOverflow.Ellipsis,
+            )
         }
-        Spacer(Modifier.height(8.dp))
-        Text(
-            caption,
-            style = app.gloss.ui.theme.Gloss.type.footnote.copy(fontWeight = FontWeight(500)),
-            color = app.gloss.ui.theme.Gloss.colors.text,
-            maxLines = 2, overflow = TextOverflow.Ellipsis,
-        )
+        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+            actions.forEach { a ->
+                DropdownMenuItem(
+                    text = { if (a.danger) Text(a.label, color = app.gloss.ui.theme.Gloss.colors.danger) else Text(a.label) },
+                    onClick = { menu = false; a.run() },
+                )
+            }
+        }
     }
 }

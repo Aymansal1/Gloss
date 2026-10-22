@@ -88,7 +88,12 @@ fun SeriesScreen(name: String, nav: Nav) {
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 rows[r].forEach { item ->
-                    ShelfIssue(item, installed[item.id], onClick = { nav.issue(item.id) }, modifier = Modifier.weight(1f))
+                    ShelfIssue(
+                        item, installed[item.id],
+                        onClick = { nav.issue(item.id) },
+                        onRead = { nav.read(item.id, c.reading.lastPage(item.id), null) },
+                        modifier = Modifier.weight(1f),
+                    )
                 }
                 repeat(columns - rows[r].size) { Spacer(Modifier.weight(1f)) }
             }

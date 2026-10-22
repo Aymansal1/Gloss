@@ -31,8 +31,10 @@ import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.SystemUpdate
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -62,6 +64,7 @@ import app.gloss.data.CatalogRepository
 import app.gloss.data.InstalledIssue
 import app.gloss.data.RecentRead
 import app.gloss.data.compareVersions
+import app.gloss.download.DownloadMode
 import app.gloss.ui.ScrollToTopOn
 import app.gloss.ui.components.CoverInfo
 import app.gloss.ui.components.CoverShape
@@ -73,20 +76,24 @@ import app.gloss.ui.components.PillButton
 import app.gloss.ui.components.PillStyle
 import app.gloss.ui.components.RoundIconButton
 import app.gloss.ui.components.SearchField
+import app.gloss.ui.components.TileAction
 import app.gloss.ui.components.Wordmark
 import app.gloss.ui.components.coverShadow
 import app.gloss.ui.components.goldLeafUnderline
 import app.gloss.ui.components.pressable
 import app.gloss.ui.container
+import app.gloss.ui.formatBytes
 import app.gloss.ui.prettyDate
 import app.gloss.ui.theme.Gloss
 import app.gloss.ui.theme.GoldLeaf
 import app.gloss.ui.theme.Motion
 import app.gloss.ui.theme.Pigment
 import app.gloss.update.UpdateChecker
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class Series(val name: String, val issues: List<CatalogItem>) {
     val years: String
@@ -199,6 +206,7 @@ fun DiscoverScreen(nav: Nav, reselect: Flow<Unit> = emptyFlow()) {
                             CoverTile(
                                 CoverInfo.of(issue), "Page ${c.reading.lastPage(issue.id)}",
                                 Modifier.width(92.dp),
+                                actions = listOf(TileAction("Issue details") { nav.issue(issue.id) }),
                                 onClick = { nav.read(issue.id, c.reading.lastPage(issue.id), null) },
                             )
                         }
@@ -233,7 +241,12 @@ fun DiscoverScreen(nav: Nav, reselect: Flow<Unit> = emptyFlow()) {
         }
 
         items(series, key = { "s-${it.name}" }, contentType = { "shelf" }) { s ->
-            Shelf(s, installed, onSeries = { nav.series(s.name) }, onIssue = { nav.issue(it) })
+            Shelf(
+                s, installed,
+                onSeries = { nav.series(s.name) },
+                onIssue = { nav.issue(it) },
+                onRead = { nav.read(it, c.reading.lastPage(it), null) },
+            )
         }
     }
 }
@@ -348,6 +361,7 @@ private fun Shelf(
     installed: Map<String, InstalledIssue>,
     onSeries: () -> Unit,
     onIssue: (String) -> Unit,
+    onRead: (String) -> Unit,
 ) {
     val c = Gloss.colors
     val pigment = Pigment.forSeries(series.name)
@@ -376,21 +390,70 @@ private fun Shelf(
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             items(series.issues, key = { it.id }) { item ->
-                ShelfIssue(item, installed[item.id], onClick = { onIssue(item.id) }, modifier = Modifier.width(112.dp))
+                ShelfIssue(
+                    item, installed[item.id],
+                    onClick = { onIssue(item.id) },
+                    onRead = { onRead(item.id) },
+                    modifier = Modifier.width(112.dp),
+                )
             }
         }
     }
 }
 
 @Composable
-fun ShelfIssue(item: CatalogItem, installed: InstalledIssue?, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun ShelfIssue(
+    item: CatalogItem,
+    installed: InstalledIssue?,
+    onClick: () -> Unit,
+    onRead: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val c = container()
     val badge: (@Composable () -> Unit)? = installed?.let { inst -> { SavedBadge(textOnly = !inst.hasScan) } }
+    var removing by remember { mutableStateOf(false) }
+    val downloading by remember(item.id) { c.downloads.progress(item.id) }.collectAsState(null)
+    val actions = buildList {
+        if (installed != null) {
+            add(TileAction("Read", run = onRead))
+            add(TileAction("Issue details", run = onClick))
+            add(TileAction("Remove from phone", danger = true) { removing = true })
+        } else if (downloading == null) {
+            add(TileAction(if (item.hasScan) "Download" else "Download text") { c.downloads.start(item.id, DownloadMode.FULL) })
+            if (item.hasScan && item.hasData) add(TileAction("Download text only") { c.downloads.start(item.id, DownloadMode.TEXT) })
+            add(TileAction("Issue details", run = onClick))
+        }
+    }
     CoverTile(
         CoverInfo.of(item),
         prettyDate(item.displayTitle),
         modifier,
         badge = badge,
+        actions = actions,
         onClick = onClick,
+    )
+    if (removing && installed != null) {
+        RemoveIssueDialog(installed, onDismiss = { removing = false })
+    }
+}
+
+/** Confirms before deleting a downloaded issue, its bookmarks and reading place. */
+@Composable
+fun RemoveIssueDialog(issue: InstalledIssue, onDismiss: () -> Unit) {
+    val c = container()
+    val scope = rememberCoroutineScope()
+    val size by produceState(0L, issue.id) { value = withContext(Dispatchers.IO) { issue.sizeBytes() } }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Remove this issue?") },
+        text = { Text("This deletes ${issue.magazineName} ${prettyDate(issue.title)} (${formatBytes(size)}) from your phone. Bookmarks for it go too. You can download it again later.") },
+        confirmButton = {
+            TextButton(onClick = {
+                onDismiss()
+                scope.launch { c.library.delete(issue.id); c.search.removeIssue(issue.id); c.reading.forget(issue.id) }
+            }) { Text("Remove", color = Gloss.colors.danger) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Keep") } },
     )
 }
 
