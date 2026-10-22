@@ -13,6 +13,9 @@ import app.gloss.ui.learn.LearnScreen
 import app.gloss.ui.theme.GlossTheme
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
 import kotlinx.coroutines.runBlocking
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -78,7 +81,13 @@ class LearnTest {
     }
 
     @Test fun kanjiCard() {
-        rule.setContent { GlossTheme(dark = true) { KanjiCard("攻", onBack = null) } }
+        rule.setContent {
+            GlossTheme(dark = true) {
+                androidx.compose.foundation.layout.Box(
+                    androidx.compose.ui.Modifier.background(app.gloss.ui.theme.Gloss.colors.raised).padding(20.dp),
+                ) { KanjiCard("攻", onBack = null) }
+            }
+        }
         rule.waitUntil(30_000) { rule.onAllNodesWithText("On").isPresent() }
         rule.shot("learn_4_kanji")
     }

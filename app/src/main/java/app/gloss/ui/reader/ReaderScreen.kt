@@ -292,7 +292,7 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
         val density = LocalDensity.current
         var peekContent by remember { mutableStateOf(72.dp) }
         var scrubbing by remember { mutableStateOf<Int?>(null) }
-        val peek = peekContent + 12.dp + navInset
+        val peek = peekContent + 4.dp + navInset
         val sheetPeek by animateDpAsState(if (chrome) peek else 0.dp, Motion.settle(), label = "peek")
         val isBookmarked = bookmarks.any { it.issueId == id && it.page == currentPage }
 
@@ -334,7 +334,8 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
                         },
                     )
                     }
-                    Spacer(Modifier.height(6.dp))
+                    // Enough room that the thumbnails stay out of sight under the peek.
+                    Spacer(Modifier.height(16.dp))
                     Scrubber(
                         screens = screens,
                         current = pager.currentPage,
