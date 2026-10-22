@@ -80,6 +80,9 @@ import app.gloss.ui.components.CoverSharing
 import app.gloss.ui.components.LargeTitleScreen
 import app.gloss.ui.components.PillButton
 import app.gloss.ui.components.SpinnableBook
+import app.gloss.ui.components.SegmentedControl
+import app.gloss.ui.components.coverShadow
+import app.gloss.ui.components.IssueCover
 import app.gloss.ui.components.PillStyle
 import app.gloss.ui.components.RoundIconButton
 import app.gloss.ui.components.Section
@@ -111,6 +114,9 @@ fun IssueScreen(id: String, nav: Nav) {
     var confirmDeleteScan by remember { mutableStateOf(false) }
 
     var pendingMode by remember { mutableStateOf<DownloadMode?>(null) }
+    // Flat cover or spinning book, remembered across issues.
+    val bookPrefs = remember { context.getSharedPreferences("book", android.content.Context.MODE_PRIVATE) }
+    var asBook by remember { mutableStateOf(bookPrefs.getBoolean("3d", true)) }
     val notifPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         pendingMode?.let { c.downloads.start(id, it) }
         pendingMode = null
@@ -171,11 +177,24 @@ fun IssueScreen(id: String, nav: Nav) {
             titleContent = {
                 Column(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     if (info != null) {
-                        SpinnableBook(
-                            info,
-                            Modifier.width(188.dp),
-                            publisher = item?.publisher ?: installed?.publisher.orEmpty(),
-                            shared = CoverSharing.Destination,
+                        if (asBook) {
+                            SpinnableBook(
+                                info,
+                                Modifier.width(188.dp),
+                                publisher = item?.publisher ?: installed?.publisher.orEmpty(),
+                                shared = CoverSharing.Destination,
+                            )
+                        } else {
+                            IssueCover(info, Modifier.width(188.dp).coverShadow(), shared = CoverSharing.Destination)
+                        }
+                        Spacer(Modifier.height(16.dp))
+                        SegmentedControl(
+                            listOf("2D", "3D"), if (asBook) 1 else 0,
+                            onSelect = { i ->
+                                asBook = i == 1
+                                bookPrefs.edit().putBoolean("3d", asBook).apply()
+                            },
+                            modifier = Modifier.width(112.dp).semantics { contentDescription = "Cover style" },
                         )
                     }
                     Spacer(Modifier.height(22.dp))

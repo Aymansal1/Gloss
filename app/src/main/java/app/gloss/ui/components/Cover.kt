@@ -28,6 +28,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -79,7 +80,12 @@ fun Modifier.coverShadow(): Modifier = this.shadow(
  * gives every cover the same glossy-stock finish.
  */
 @Composable
-fun IssueCover(info: CoverInfo, modifier: Modifier = Modifier, shared: CoverSharing = CoverSharing.Source) {
+fun IssueCover(
+    info: CoverInfo,
+    modifier: Modifier = Modifier,
+    shared: CoverSharing = CoverSharing.Source,
+    shape: Shape = CoverShape,
+) {
     val c = container()
     val installed = c.library.issues.value[info.id]
     var localCover by remember(info.id, installed?.stamp, installed?.hasScan) { mutableStateOf<File?>(null) }
@@ -103,7 +109,7 @@ fun IssueCover(info: CoverInfo, modifier: Modifier = Modifier, shared: CoverShar
                     else -> Modifier
                 },
             )
-            .clip(CoverShape)
+            .clip(shape)
             .gloss(),
     ) {
         if (model == null) {
