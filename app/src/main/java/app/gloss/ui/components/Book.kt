@@ -69,10 +69,10 @@ import kotlin.math.sin
 import kotlin.random.Random
 
 /**
- * Which way `graphicsLayer.rotationY` turns: +1 when a positive angle brings the right edge
- * toward the viewer. All the geometry below is written in that convention.
+ * Which way `graphicsLayer.rotationY` turns. The geometry below has a positive angle bring the
+ * right edge toward the viewer; Android turns it away, so the sign flips.
  */
-private const val TURN = 1f
+private const val TURN = -1f
 
 /**
  * The issue's cover as a real magazine you can spin: drag sideways to turn it, with the spine
@@ -191,7 +191,8 @@ fun SpinnableBook(
                     },
             )
         }
-        if (!showingBack) {
+        // Edge-on, a face is just a line with a shadow; leave it out.
+        if (cosA > 0.02f) {
             Box(
                 Modifier
                     .fillMaxSize()
@@ -205,7 +206,7 @@ fun SpinnableBook(
                         spotShadowColor = Color.Black.copy(alpha = 0.32f)
                     },
             ) { IssueCover(info, Modifier.fillMaxSize(), shared = CoverSharing.None) }
-        } else {
+        } else if (cosA < -0.02f) {
             Box(
                 Modifier
                     .fillMaxSize()

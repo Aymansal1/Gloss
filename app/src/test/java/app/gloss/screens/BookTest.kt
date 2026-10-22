@@ -55,8 +55,8 @@ class BookTest {
                 }
             }
         }
-        // The back page is rendered and decoded off the main thread.
-        Thread.sleep(1500)
+        // The back page is rendered and decoded off the main thread, then handed back to it.
+        repeat(30) { Thread.sleep(100); rule.waitForIdle() }
         rule.shot("book_angles")
     }
 }
