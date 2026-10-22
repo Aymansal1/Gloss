@@ -15,10 +15,13 @@ object Deinflect {
     const val MASU = 32
     /** Plain past in た/だ, which たら and たり lead back to. */
     const val PAST = 64
+    /** A te-form with いる after it (していた), still to be taken back to the te-form. */
+    const val TE = 128
     const val ANY = 0x7fffffff
     private const val VERB = V1 or V5 or VK or VS
 
-    data class Candidate(val term: String, val types: Int)
+    /** A form [s] could be an inflection of, [steps] rules back from it. */
+    data class Candidate(val term: String, val types: Int, val steps: Int = 0)
 
     private class Rule(val from: String, val to: String, val typesIn: Int, val typesOut: Int)
 
@@ -41,7 +44,7 @@ object Deinflect {
                     if (c.types and r.typesIn == 0) continue
                     val stem = c.term.dropLast(len)
                     if (stem.isEmpty() && r.to.isEmpty()) continue
-                    queue += Candidate(stem + r.to, r.typesOut)
+                    queue += Candidate(stem + r.to, r.typesOut, c.steps + 1)
                 }
             }
         }
@@ -88,6 +91,7 @@ object Deinflect {
             add(a + "れる", dict, V1, V5)        // passive
             add(a + "せる", dict, V1, V5)        // causative
             add(i + "ます", dict, MASU, V5)
+            add(i + "ながら", dict, ANY, V5)
             add(i + "たい", dict, ADJ, V5)
             add(e + "る", dict, V1, V5)          // potential
             add(e + "ば", dict, ANY, V5)
@@ -101,19 +105,18 @@ object Deinflect {
         // Ichidan: the stem takes the ending directly.
         for ((suffix, inT) in listOf(
             "ない" to ADJ, "ず" to ANY, "られる" to V1, "れる" to V1, "させる" to V1, "ます" to MASU,
-            "たい" to ADJ, "れば" to ANY, "よう" to ANY, "て" to ANY, "た" to PAST, "ろ" to ANY,
+            "たい" to ADJ, "れば" to ANY, "よう" to ANY, "て" to ANY, "た" to PAST, "ろ" to ANY, "ながら" to ANY,
         )) add(suffix, "る", inT, V1)
 
         // する and 来る, in kana and kanji.
         for ((stem, dict, t) in listOf(Triple("し", "する", VS), Triple("さ", "する", VS))) {
             if (stem == "し") {
-                for ((suffix, inT) in listOf("ない" to ADJ, "ます" to MASU, "たい" to ADJ, "よう" to ANY, "て" to ANY, "た" to PAST, "ろ" to ANY)) add(stem + suffix, dict, inT, t)
+                for ((suffix, inT) in listOf("ない" to ADJ, "ます" to MASU, "たい" to ADJ, "よう" to ANY, "て" to ANY, "た" to PAST, "ろ" to ANY, "ながら" to ANY)) add(stem + suffix, dict, inT, t)
             } else {
                 for ((suffix, inT) in listOf("れる" to V1, "せる" to V1)) add(stem + suffix, dict, inT, t)
             }
         }
         add("すれば", "する", ANY, VS)
-        add("できる", "する", V1, VS)
         for (k in listOf("来", "")) {
             val ko = if (k.isEmpty()) "こ" else k
             val ki = if (k.isEmpty()) "き" else k
@@ -129,6 +132,9 @@ object Deinflect {
             add(ki + "た", ku + "る", PAST, VK)
             add(ku + "れば", ku + "る", ANY, VK)
         }
+
+        // している, してる and 読んでいた are the te-form plus いる: one word to look up, not three.
+        for (t in listOf("て", "で")) { add(t + "いる", t, V1, TE); add(t + "る", t, V1, TE) }
 
         // Polite endings lead back to ます.
         for (s in listOf("ました", "ません", "ましょう", "まして")) add(s, "ます", ANY, MASU)

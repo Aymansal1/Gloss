@@ -23,7 +23,7 @@ The scan stays the hero. Translation is a gloss laid over the original rather th
 ## Capabilities and Constraints
 - Kotlin + Jetpack Compose, minSdk 33, single-activity.
 - Reader: paged scans, tap-to-translate, manga mode (English set into each box), zoom, RTL paging, text-only installs, bookmarks, continue reading, text size.
-- Learn: an offline JMdict/KANJIDIC2/KanjiVG dictionary bundled in the app, a Learn panel behind each gloss (words, readings, meanings, voice via system TTS, kanji and stroke order), saved words with Anki export, a gamer-slang glossary, reading level per issue.
+- Learn: an offline JMdict/JMnedict/KANJIDIC2/KanjiVG dictionary (names come out as names, read the way the translation says) bundled in the app, a Learn panel behind each gloss (words, readings, meanings, voice via system TTS, kanji and stroke order), saved words with Anki export, a gamer-slang glossary, reading level per issue.
 - Search: on-device index, CJK bigrams, phrases, exclusions, prefixes.
 - Translations are AI-generated and can be wrong; the app says so.
 - No accounts, no analytics, no ads.

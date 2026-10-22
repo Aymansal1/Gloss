@@ -10,7 +10,8 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
- * The bundled Japanese dictionary (JMdict, KANJIDIC2 and KanjiVG, built by tools/japanese_pack.py).
+ * The bundled Japanese dictionary (JMdict, JMnedict, KANJIDIC2 and KanjiVG, built by
+ * tools/japanese_pack.py).
  * The database ships compressed in the APK and is unpacked to private storage the first time
  * something needs it.
  */
@@ -52,6 +53,23 @@ class Japanese(private val context: Context) {
             arrayOf(form),
         ).use { c -> while (c.moveToNext()) out += wordFrom(c.getLong(0), c.getString(1), c.getString(2), c.getString(3), c.getInt(4)) }
         synchronized(formCache) { formCache[form] = out }
+        out
+    }
+
+    private val nameCache = object : LinkedHashMap<String, List<Name>>(256, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<Name>>?) = size > 2000
+    }
+
+    /** The ways [form] reads as a person's name, from JMnedict. */
+    private fun names(d: SQLiteDatabase, form: String): List<Name> = synchronized(nameCache) { nameCache[form] } ?: run {
+        val out = d.rawQuery("SELECT readings FROM name WHERE form = ?", arrayOf(form)).use { c ->
+            if (!c.moveToNext()) emptyList()
+            else c.getString(0).split('\n').mapNotNull { line ->
+                val p = line.split('\t')
+                if (p.size < 2) null else Name(p[0], p[1].split(',').filter { it.isNotEmpty() }, p.getOrElse(2) { "" })
+            }
+        }
+        synchronized(nameCache) { nameCache[form] = out }
         out
     }
 
@@ -107,18 +125,19 @@ class Japanese(private val context: Context) {
     }
 
     /**
-     * Splits Japanese text into words, longest dictionary match first, tracing inflected verbs and
-     * adjectives back to their dictionary form. Non-Japanese runs come back as plain tokens.
+     * Splits Japanese text into words, tracing inflected verbs and adjectives back to their
+     * dictionary form and picking out people's names. [hint], the English translation, helps tell
+     * which kanji are names and how they're read. Non-Japanese runs come back as plain tokens.
      */
-    suspend fun tokenize(text: String): List<Token> {
+    suspend fun tokenize(text: String, hint: String = ""): List<Token> {
         val d = open() ?: return listOf(Token(text, null, text, ""))
-        return withContext(Dispatchers.Default) { Tokenizer.tokenize(text) { entries(d, it) } }
+        return withContext(Dispatchers.Default) { Tokenizer.tokenize(text, { entries(d, it) }, { names(d, it) }, hint) }
     }
 
     companion object {
         private const val TAG = "Japanese"
         private const val ASSET = "japanese.db"
-        private const val FORMAT = 1
+        private const val FORMAT = 2
 
         internal fun wordFrom(id: Long, kanji: String, kana: String, senses: String, rank: Int) = Word(
             id = id,

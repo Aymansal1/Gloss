@@ -234,7 +234,7 @@ fun SettingsScreen(nav: Nav) {
                     LinkText("Welcome tour") { app.gloss.ui.intro.Intro.show() }
                 }
                 Text(
-                    "Dictionary from JMdict and KANJIDIC2 by the Electronic Dictionary Research and Development Group, stroke order from KanjiVG by Ulrich Apel, magazine notes from Wikipedia. All under CC BY-SA.",
+                    "Dictionary from JMdict, JMnedict and KANJIDIC2 by the Electronic Dictionary Research and Development Group, stroke order from KanjiVG by Ulrich Apel, magazine notes from Wikipedia. All under CC BY-SA.",
                     style = Gloss.type.caption, color = g.tertiary, textAlign = TextAlign.Center,
                 )
                 Text("AGPL-3.0 · Fonts under the SIL Open Font License", style = Gloss.type.caption, color = g.tertiary, textAlign = TextAlign.Center)

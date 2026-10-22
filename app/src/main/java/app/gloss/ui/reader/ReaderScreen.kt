@@ -193,6 +193,7 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
     var options by remember { mutableStateOf(false) }
     // The passage open in the Learn panel, if any.
     var learning by remember { mutableStateOf<List<String>?>(null) }
+    var learningHint by remember { mutableStateOf("") }
     var learningPage by remember { mutableIntStateOf(0) }
     // The page the reader is "on"; survives rotation so a spread re-opens on the right half.
     var anchorPage by rememberSaveable { mutableIntStateOf(startPage ?: c.reading.lastPage(id)) }
@@ -414,6 +415,7 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
                                 onLearn = note?.takeIf { learnButton && it.original.isNotEmpty() }?.let { n ->
                                     {
                                         learning = n.original.map { blockPlainText(it) }
+                                        learningHint = n.translation.joinToString("\n") { blockPlainText(it) }
                                         learningPage = pageNo
                                     }
                                 },
@@ -454,6 +456,7 @@ private fun Reader(id: String, startPage: Int?, query: String?, nav: Nav) {
                 learning?.let { blocks ->
                     LearnSheet(
                         blocks = blocks,
+                        translation = learningHint,
                         source = PassageSource(id, issueLabel(issue.magazineName, issue.title), learningPage),
                         onDismiss = { learning = null },
                     )
@@ -483,7 +486,7 @@ private val SheetShape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)
 /** The Learn panel for the glossed box, in a sheet over the page. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun LearnSheet(blocks: List<String>, source: PassageSource, onDismiss: () -> Unit) {
+private fun LearnSheet(blocks: List<String>, translation: String, source: PassageSource, onDismiss: () -> Unit) {
     val g = Gloss.colors
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -495,6 +498,7 @@ private fun LearnSheet(blocks: List<String>, source: PassageSource, onDismiss: (
         LearnPanel(
             blocks, source,
             Modifier.verticalScroll(rememberScrollState()).windowInsetsPadding(WindowInsets.navigationBars).padding(bottom = 12.dp),
+            translation = translation,
         )
     }
 }

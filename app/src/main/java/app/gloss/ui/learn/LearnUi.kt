@@ -98,12 +98,12 @@ private sealed interface Focus {
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun LearnPanel(blocks: List<String>, source: PassageSource, modifier: Modifier = Modifier) {
+fun LearnPanel(blocks: List<String>, source: PassageSource, modifier: Modifier = Modifier, translation: String = "") {
     val c = container()
     val g = Gloss.colors
     val passage = remember(blocks) { blocks.joinToString("\n") }
     val tokens by produceState<List<List<Token>>?>(null, blocks) {
-        value = if (c.japanese.ready()) blocks.map { c.japanese.tokenize(it) } else emptyList()
+        value = if (c.japanese.ready()) blocks.map { c.japanese.tokenize(it, hint = translation) } else emptyList()
     }
     var focus by remember { mutableStateOf<Focus?>(null) }
     val slang = remember(passage) { Slang.inText(passage) }
@@ -140,7 +140,18 @@ fun LearnPanel(blocks: List<String>, source: PassageSource, modifier: Modifier =
                         FlowRow(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             line.forEach { t ->
                                 val chosen = (focus as? Focus.OnWord)?.token === t || (focus as? Focus.OnKanji)?.token === t
-                                RubyWord(t, chosen, onTap = if (t.word != null && !t.word.isGrammar) ({ focus = Focus.OnWord(t) }) else null)
+                                // Every word opens, particles too; a kanji the dictionary has no word
+                                // for opens as that kanji.
+                                val loneKanji = t.surface.singleOrNull()?.takeIf(Kana::isKanji)
+                                RubyWord(
+                                    t, chosen,
+                                    quiet = t.word?.isGrammar == true,
+                                    onTap = when {
+                                        t.word != null -> ({ focus = Focus.OnWord(t) })
+                                        loneKanji != null -> ({ focus = Focus.OnKanji(t, loneKanji.toString()) })
+                                        else -> null
+                                    },
+                                )
                             }
                         }
                     }
@@ -153,7 +164,7 @@ fun LearnPanel(blocks: List<String>, source: PassageSource, modifier: Modifier =
                 ) { f ->
                     when (f) {
                         null -> Text(
-                            "Tap a word to look it up. Readings sit above the kanji.",
+                            "Tap any word to look it up, even the little ones like の and を.",
                             style = Gloss.type.subhead, color = g.secondary,
                             modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
                         )
@@ -163,7 +174,7 @@ fun LearnPanel(blocks: List<String>, source: PassageSource, modifier: Modifier =
                             modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
                         )
                         is Focus.OnKanji -> KanjiCard(
-                            f.ch, onBack = { focus = Focus.OnWord(f.token) },
+                            f.ch, onBack = if (f.token.word != null) ({ focus = Focus.OnWord(f.token) }) else null,
                             modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
                         )
                     }
@@ -173,7 +184,8 @@ fun LearnPanel(blocks: List<String>, source: PassageSource, modifier: Modifier =
                     slang.forEach { SlangRow(it) }
                 }
                 val words = remember(all) {
-                    all.flatten().filter { it.word != null && !it.word.isGrammar }.distinctBy { it.word!!.id }
+                    all.flatten().filter { it.word != null && !it.word.isGrammar }
+                        .distinctBy { t -> t.word!!.let { if (it.isBuiltIn) "${it.headword}/${it.reading}" else it.id.toString() } }
                 }
                 if (words.isNotEmpty()) {
                     SectionLabel("In this passage")
@@ -182,7 +194,7 @@ fun LearnPanel(blocks: List<String>, source: PassageSource, modifier: Modifier =
                     }
                 }
                 Text(
-                    "Dictionary: JMdict and KANJIDIC2 by the EDRDG; stroke order by KanjiVG. Both CC BY-SA.",
+                    "Dictionary: JMdict, JMnedict and KANJIDIC2 by the EDRDG; stroke order by KanjiVG. All CC BY-SA.",
                     style = Gloss.type.caption, color = g.tertiary,
                     modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 8.dp),
                 )
@@ -201,7 +213,7 @@ private fun SectionLabel(text: String) {
 
 /** One word of the passage: its reading in small type over the kanji, gold when chosen. */
 @Composable
-private fun RubyWord(t: Token, chosen: Boolean, onTap: (() -> Unit)?) {
+private fun RubyWord(t: Token, chosen: Boolean, quiet: Boolean, onTap: (() -> Unit)?) {
     val g = Gloss.colors
     val rubyStyle = Gloss.type.caption2.copy(fontSize = 10.sp, lineHeight = 12.sp)
     val baseStyle = Gloss.type.callout.copy(fontSize = 19.sp, lineHeight = 26.sp)
@@ -216,7 +228,8 @@ private fun RubyWord(t: Token, chosen: Boolean, onTap: (() -> Unit)?) {
         t.ruby.forEach { (text, ruby) ->
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(ruby ?: " ", style = rubyStyle, color = if (ruby == null) Color.Transparent else if (g.isDark) GoldLeaf.Hi else g.goldInk, maxLines = 1)
-                Text(text, style = baseStyle, color = if (onTap == null) g.secondary else g.text)
+                // Particles sit back a little so the words carrying meaning stand out.
+                Text(text, style = baseStyle, color = if (onTap == null || quiet) g.secondary else g.text)
             }
         }
     }
@@ -249,7 +262,7 @@ fun WordCard(
                 if (reading != headword) Text(reading, style = Gloss.type.subhead, color = g.secondary)
             }
             SpeakButton(headword.takeIf { it.any(Kana::isKanji) }?.let { word.reading } ?: headword, "Say $headword")
-            RoundIconButton(
+            if (!word.isBuiltIn) RoundIconButton(
                 if (isSaved) Icons.Rounded.Star else Icons.Rounded.StarBorder,
                 if (isSaved) "Remove from your words" else "Save to your words",
                 {
@@ -267,7 +280,10 @@ fun WordCard(
         if (token != null && token.surface != headword) {
             Text("Appears as ${token.surface}", style = Gloss.type.footnote, color = g.tertiary)
         }
-        if (word.common) {
+        if (word.isName) {
+            Spacer(Modifier.height(6.dp))
+            Tag("Name", g.goldInk)
+        } else if (word.common) {
             Spacer(Modifier.height(6.dp))
             Tag("Common word", g.lapis)
         }
@@ -525,7 +541,7 @@ private fun PassageWordRow(t: Token, passage: String, source: PassageSource, onO
             }
             Text(word.meaning, style = Gloss.type.footnote, color = g.secondary, maxLines = 2)
         }
-        RoundIconButton(
+        if (!word.isBuiltIn) RoundIconButton(
             if (isSaved) Icons.Rounded.Star else Icons.Rounded.StarBorder,
             if (isSaved) "Remove $headword from your words" else "Save $headword",
             {
@@ -560,6 +576,13 @@ private fun posLabel(pos: List<String>, notes: List<String>): String {
             p == "suf" || p == "n-suf" -> "suffix"
             p == "conj" -> "conjunction"
             p == "num" -> "number"
+            p == "prt" -> "particle"
+            p == "cop" || p.startsWith("aux") -> "grammar"
+            p == "nm-s" -> "surname"
+            p == "nm-g" -> "given name"
+            p == "nm-f" -> "given name, usually a woman's"
+            p == "nm-m" -> "given name, usually a man's"
+            p == "nm-p" -> "a real person"
             else -> null
         }
     }.distinct() + notes.mapNotNull {

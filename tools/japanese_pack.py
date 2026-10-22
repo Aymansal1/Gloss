@@ -2,8 +2,8 @@
 """
 Builds app/src/main/assets/japanese.db, the dictionary behind Gloss's Learn features.
 
-Sources (both CC BY-SA, credited in the app and README):
-  - JMdict and KANJIDIC2 from the Electronic Dictionary Research and Development Group,
+Sources (all CC BY-SA, credited in the app and README):
+  - JMdict, JMnedict and KANJIDIC2 from the Electronic Dictionary Research and Development Group,
     as packaged in SQLite by the jamdict-data project on PyPI.
   - Stroke order from KanjiVG (https://kanjivg.tagaini.net).
 
@@ -150,6 +150,41 @@ for (idseq,) in src.execute("SELECT idseq FROM Entry ORDER BY idseq"):
             out.execute("INSERT OR IGNORE INTO form VALUES (?,?,?)", (t, min(rank_of(knp.get(kid, [])), rank), idseq))
     n += 1
 
+# JMnedict: people's names, so 萩原 reads as a surname rather than "reedy field". Places, companies
+# and the like stay out; they're rarely what a passage means and would double the file. One row per
+# spelling holds every reading of it, as lines of "reading\ttypes\tgloss". The gloss of a
+# plain surname or given name is just its romaji, which the app works out itself, so only real
+# people (宮本茂: "Shigeru Miyamoto (1952.11.16-), game designer") keep theirs.
+NAME_TYPES = {"surname": "s", "given": "g", "fem": "f", "masc": "m", "person": "p", "place": "pl"}
+PERSON = {"s", "g", "f", "m", "p"}
+out.execute("CREATE TABLE name (form TEXT PRIMARY KEY, readings TEXT NOT NULL) WITHOUT ROWID")
+ne_kanji = defaultdict(list)
+for idseq, text in src.execute("SELECT idseq, text FROM NEKanji ORDER BY ID"):
+    ne_kanji[idseq].append(text)
+ne_kana = defaultdict(list)
+for idseq, text in src.execute("SELECT idseq, text FROM NEKana ORDER BY ID"):
+    ne_kana[idseq].append(text)
+ne_types = defaultdict(list)
+ne_gloss = defaultdict(list)
+for idseq, kind in src.execute("SELECT t.idseq, y.text FROM NETranslation t JOIN NETransType y ON y.tid = t.ID"):
+    if kind in NAME_TYPES and NAME_TYPES[kind] not in ne_types[idseq]:
+        ne_types[idseq].append(NAME_TYPES[kind])
+for idseq, lang, text in src.execute("SELECT t.idseq, g.lang, g.text FROM NETranslation t JOIN NETransGloss g ON g.tid = t.ID"):
+    if lang in (None, "", "eng") and text not in ne_gloss[idseq]:
+        ne_gloss[idseq].append(text)
+by_form = defaultdict(list)
+for idseq in sorted(ne_types):
+    types = ne_types[idseq]
+    if not PERSON.intersection(types) or not ne_kanji.get(idseq) or not ne_kana.get(idseq):
+        continue
+    gloss = "; ".join(ne_gloss[idseq]) if "p" in types else ""
+    for form in dict.fromkeys(ne_kanji[idseq]):
+        for kana in ne_kana[idseq][:1]:
+            by_form[form].append("%s\t%s\t%s" % (kana, ",".join(types), gloss))
+for form, lines in by_form.items():
+    out.execute("INSERT INTO name VALUES (?,?)", (form, "\n".join(lines)))
+names = len(by_form)
+
 # KANJIDIC2: readings and meanings come through reading-meaning groups.
 groups = defaultdict(list)
 for gid, cid in src.execute("SELECT ID, cid FROM rm_group"):
@@ -190,11 +225,11 @@ for cid, literal, strokes, grade, freq, jlpt in src.execute(
     k += 1
 
 out.executemany("INSERT INTO meta VALUES (?,?)", [
-    ("format", "1"),
+    ("format", "2"),
     ("jmdict", dict(src.execute("SELECT key, value FROM meta").fetchall()).get("jmdict.version", "")),
 ])
 out.commit()
 out.execute("VACUUM")
 out.close()
 os.replace(out_tmp, out_path)
-print(f"{n} words, {k} kanji -> {out_path} ({os.path.getsize(out_path) / 1e6:.1f} MB)")
+print(f"{n} words, {names} name spellings, {k} kanji -> {out_path} ({os.path.getsize(out_path) / 1e6:.1f} MB)")

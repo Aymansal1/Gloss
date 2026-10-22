@@ -57,7 +57,30 @@ class LearnTest {
         assertTrue(t.all { it.word != null })
         assertEquals(listOf("攻略" to "こうりゃく"), t.first().ruby)
         // Pure function, no dictionary: unknown katakana stays whole.
-        assertEquals(listOf("ファミコン"), Tokenizer.tokenize("ファミコン") { emptyList() }.map { it.surface })
+        assertEquals(listOf("ファミコン"), Tokenizer.tokenize("ファミコン", { emptyList() }).map { it.surface })
+    }
+
+    @Test fun readsNamesAsNames() = runBlocking {
+        val text = "萩原雪歩（CV：落合祐里香）"
+        for (hint in listOf("Yukiho Hagiwara (CV: Yurika Ochiai)", "")) {
+            val names = japanese.tokenize(text, hint).filter { it.word?.isName == true }
+            assertEquals(listOf("萩原", "雪歩", "落合", "祐里香"), names.map { it.surface })
+        }
+        // The translation says how the name is read, even when the name dictionary has it otherwise.
+        val read = japanese.tokenize(text, "Yukiho Hagiwara (CV: Yurika Ochiai)").filter { it.word != null }.map { it.reading }
+        assertEquals(listOf("はぎわら", "ゆきほ", "おちあい", "ゆりか"), read)
+    }
+
+    @Test fun splitsWholeSentencesSensibly() = runBlocking {
+        fun surfaces(text: String) = runBlocking { japanese.tokenize(text) }.map { it.surface }
+        // Greedy matching used to read 楽しみたく ("want to enjoy") + さん ("Mr.").
+        assertEquals(listOf("楽しみ", "が", "たくさん", "ある"), surfaces("楽しみがたくさんある"))
+        assertEquals(listOf("田中", "くん", "の", "ハイスコア"), surfaces("田中くんのハイスコア"))
+        val t = japanese.tokenize("世界で一番元気なアイドル")
+        assertTrue(t.first { it.surface == "で" }.word!!.isGrammar)
+        assertTrue(t.first { it.surface == "な" }.word!!.isGrammar)
+        assertEquals("ほん", japanese.tokenize("3本の剣").first { it.surface == "本" }.reading)
+        assertEquals(listOf("勉強", "していた"), surfaces("勉強していた"))
     }
 
     @Test fun learnTab() {

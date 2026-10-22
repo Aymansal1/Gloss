@@ -163,7 +163,7 @@ The catalog, scans, transcriptions and translations come from [Gaming Alexandria
 
 Gloss uses [Inter](https://rsms.me/inter/) and [Instrument Serif](https://github.com/Instrument/instrument-serif), both under the SIL Open Font License (see [`licenses/`](licenses/)), [Haze](https://github.com/chrisbanes/haze) for the frosted glass, and [Backdrop](https://github.com/Kyant0/AndroidLiquidGlass) (Apache 2.0) for the liquid glass.
 
-The Learn dictionary is built from [JMdict](https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project) and [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project), the property of the [Electronic Dictionary Research and Development Group](https://www.edrdg.org/) and used under its licence (CC BY-SA 4.0), via the [jamdict-data](https://pypi.org/project/jamdict-data/) package. Stroke order comes from [KanjiVG](https://kanjivg.tagaini.net) by Ulrich Apel (CC BY-SA 3.0). Magazine notes are from [Wikipedia](https://en.wikipedia.org) (CC BY-SA 4.0).
+The Learn dictionary is built from [JMdict](https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project), [JMnedict](https://www.edrdg.org/enamdict/enamdict_doc.html) and [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project), the property of the [Electronic Dictionary Research and Development Group](https://www.edrdg.org/) and used under its licence (CC BY-SA 4.0), via the [jamdict-data](https://pypi.org/project/jamdict-data/) package. Stroke order comes from [KanjiVG](https://kanjivg.tagaini.net) by Ulrich Apel (CC BY-SA 3.0). Magazine notes are from [Wikipedia](https://en.wikipedia.org) (CC BY-SA 4.0).
 
 ## License
 

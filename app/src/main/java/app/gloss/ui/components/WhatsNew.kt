@@ -29,11 +29,10 @@ import app.gloss.ui.theme.GoldLeaf
  */
 object WhatsNew {
     val notes = listOf(
-        "Learn Japanese as you read: tap Learn on a translation to see each word's reading, meaning and voice, and star the ones to keep.",
-        "A new Learn tab keeps your saved words, exports them for Anki, and explains the magazines' gamer slang.",
-        "The reader's bottom bar is one slim row with a page slider, and the controls tuck away as you turn pages.",
-        "Discover looks back at what came out this week in gaming history, and magazine pages carry a note from Wikipedia.",
-        "Downloaded issues show how hard their Japanese is, and wide screens get two-page spreads upright too.",
+        "Learn now reads people's names as names, using the translation to tell how they're said: 萩原雪歩 is Yukiho Hagiwara, not \"reedy field\".",
+        "Sentences split the way a reader would, so たくさん stays one word and で, な and くん mean what they mean in context.",
+        "Every word in Learn opens when tapped, the little ones like の and を included, and a kanji on its own opens its stroke order.",
+        "From the archive's history notes always say when it happened.",
     )
 
     private const val PREFS = "whats-new"

@@ -33,6 +33,10 @@ import app.gloss.ui.prettyDate
 import app.gloss.ui.theme.Gloss
 import app.gloss.ui.theme.GoldLeaf
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+
+private val FactDate = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.ENGLISH)
 
 /** An issue from the catalog that came out this week (or month) in some past year. */
 internal fun issueForToday(items: List<CatalogItem>, today: LocalDate): Pair<CatalogItem, Boolean>? {
@@ -88,8 +92,13 @@ fun FromTheArchive(items: List<CatalogItem>, onIssue: (String) -> Unit) {
             Box(Modifier.padding(top = 3.dp).width(3.dp).height(30.dp).background(Brush.verticalGradient(GoldLeaf.stops), CircleShape))
             Spacer(Modifier.width(12.dp))
             Column {
+                // A dated fact always carries its date: "came out" means nothing without a when.
                 Text(
-                    if (dated && fact.date != null) "This week in ${fact.date.year}" else "Did you know",
+                    when {
+                        fact.date == null -> "Did you know"
+                        dated -> "This week in ${fact.date.year}"
+                        else -> "On ${fact.date.format(FactDate)}"
+                    },
                     style = Gloss.type.caption.copy(fontWeight = FontWeight(600)), color = g.secondary,
                 )
                 Spacer(Modifier.height(2.dp))
