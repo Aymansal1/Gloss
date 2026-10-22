@@ -63,6 +63,7 @@ android {
         unitTests.all {
             it.systemProperty("roborazzi.test.record", "true")
             it.maxHeapSize = "3g"
+            it.testLogging { exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL }
         }
     }
 }
