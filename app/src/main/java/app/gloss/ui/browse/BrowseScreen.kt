@@ -226,6 +226,12 @@ fun DiscoverScreen(nav: Nav, reselect: Flow<Unit> = emptyFlow()) {
             }
         }
 
+        if (items.isNotEmpty() && filter.isBlank()) {
+            item(key = "archive") {
+                FromTheArchive(items.filter { showAdult || !it.adult }, onIssue = { nav.issue(it) })
+            }
+        }
+
         if (items.isEmpty() && loading) {
             item(key = "loading") {
                 EmptyState(title = "Opening the archive", body = "Fetching the catalog from Gaming Alexandria.") {

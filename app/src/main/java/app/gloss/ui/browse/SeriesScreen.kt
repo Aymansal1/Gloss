@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -71,6 +72,7 @@ fun SeriesScreen(name: String, nav: Nav) {
             }
         },
     ) {
+        item(key = "about") { WikiAbout(name) }
         if (years.size > 1) {
             item(key = "years") {
                 Row(
@@ -116,5 +118,34 @@ private fun YearChip(label: String, selected: Boolean, pigment: Color, onClick: 
         contentAlignment = Alignment.Center,
     ) {
         Text(label, style = Gloss.type.subhead, color = fg)
+    }
+}
+
+/** A few lines about the magazine from English Wikipedia, credited, when Wikipedia has a page. */
+@Composable
+private fun WikiAbout(name: String) {
+    val c = container()
+    val g = Gloss.colors
+    val uri = androidx.compose.ui.platform.LocalUriHandler.current
+    val summary by androidx.compose.runtime.produceState<app.gloss.learn.WikiSummary?>(null, name) { value = c.wikipedia.summary(name) }
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    val s = summary ?: return
+    Column(
+        Modifier
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .fillMaxWidth()
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+            .background(g.surface)
+            .pressable({ expanded = !expanded }, scaleTo = 0.99f, onClickLabel = if (expanded) "Show less" else "Read more")
+            .padding(14.dp),
+    ) {
+        Text(s.extract, style = Gloss.type.subhead, color = g.text, maxLines = if (expanded) Int.MAX_VALUE else 4,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "From Wikipedia, CC BY-SA",
+            style = Gloss.type.footnote.copy(fontWeight = androidx.compose.ui.text.font.FontWeight(600)), color = g.lapis,
+            modifier = Modifier.pressable({ uri.openUri(s.url) }, scaleTo = 0.96f, onClickLabel = "Open the Wikipedia page"),
+        )
     }
 }

@@ -221,6 +221,7 @@ fun IssueScreen(id: String, nav: Nav) {
             },
         ) {
             item(key = "facts") { Facts(item, installed) }
+            if (installed != null) item(key = "level") { ReadingLevel(id, installed.stamp) }
 
             item?.tags?.takeIf { it.isNotEmpty() }?.let { tags ->
                 item(key = "tags") {
@@ -482,5 +483,43 @@ private fun Facts(item: CatalogItem?, installed: InstalledIssue?) {
                 divider = i != rows.lastIndex,
             )
         }
+    }
+}
+
+/** How hard the issue's Japanese is, from its kanji, for downloaded issues with text. */
+@Composable
+private fun ReadingLevel(id: String, stamp: Any?) {
+    val c = container()
+    val g = Gloss.colors
+    val level by androidx.compose.runtime.produceState<app.gloss.learn.Difficulty?>(null, id, stamp) {
+        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            val content = c.library.content(id) ?: return@withContext null
+            val text = buildString { content.pages.values.forEach { append(it.transcription) } }
+            val kanji = text.filter { app.gloss.learn.Kana.isKanji(it) }.map { it.toString() }.toSet()
+            if (kanji.isEmpty()) return@withContext null
+            app.gloss.learn.Difficulty.of(text, c.japanese.kanjiLevels(kanji))
+        }
+    }
+    val d = level ?: return
+    val color = when (d.level) {
+        app.gloss.learn.Difficulty.Level.Easy -> app.gloss.ui.theme.Pigment.Malachite
+        app.gloss.learn.Difficulty.Level.Medium -> app.gloss.ui.theme.Pigment.Orpiment
+        app.gloss.learn.Difficulty.Level.Hard -> app.gloss.ui.theme.Pigment.Madder
+    }
+    val share = (d.beyondSchool * 100).toInt()
+    Section(
+        Modifier.padding(top = 26.dp), header = "Japanese",
+        footer = "$share% of the kanji go past what Japanese primary schools teach. ${d.kanjiSeen} different kanji appear in this issue.",
+    ) {
+        Cell(
+            title = "Reading level",
+            trailing = {
+                Text(
+                    d.level.label, style = Gloss.type.subhead.copy(fontWeight = androidx.compose.ui.text.font.FontWeight(600)), color = color,
+                    modifier = Modifier.clip(androidx.compose.foundation.shape.CircleShape).background(color.copy(alpha = 0.15f)).padding(horizontal = 10.dp, vertical = 4.dp),
+                )
+            },
+            divider = false,
+        )
     }
 }

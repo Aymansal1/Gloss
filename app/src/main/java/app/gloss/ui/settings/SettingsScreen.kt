@@ -72,6 +72,9 @@ fun SettingsScreen(nav: Nav) {
     val zones by c.reading.showZones.collectAsState()
     val textScale by c.reading.textScale.collectAsState()
     val adult by c.reading.showAdult.collectAsState()
+    val autoHide by c.reading.autoHide.collectAsState()
+    val learnButton by c.reading.learnButton.collectAsState()
+    val savedWords by c.words.words.collectAsState()
     val update by c.updates.state.collectAsState()
     var message by remember { mutableStateOf<Pair<String, String>?>(null) }
 
@@ -122,8 +125,10 @@ fun SettingsScreen(nav: Nav) {
                 footer = "Japanese magazines bind on the right, so pages turn right to left unless you change it.",
             ) {
                 Cell("Turn pages right to left", trailing = { GlossSwitch(rtl, { c.reading.setRightToLeft(it) }) })
-                Cell("Two-page spreads sideways", subtitle = "Show facing pages together in landscape",
+                Cell("Two-page spreads", subtitle = "Show facing pages together sideways and on wide screens",
                     trailing = { GlossSwitch(spreads, { c.reading.setSpreads(it) }) })
+                Cell("Hide controls while turning pages", subtitle = "Tap the page to bring them back",
+                    trailing = { GlossSwitch(autoHide, { c.reading.setAutoHide(it) }) })
                 Cell("Outline text on scans", subtitle = "Show where every translated box is",
                     trailing = { GlossSwitch(zones, { c.reading.setShowZones(it) }) })
                 Cell(
@@ -137,6 +142,24 @@ fun SettingsScreen(nav: Nav) {
                             RoundIconButton(Icons.Rounded.Add, "Larger text", { c.reading.setTextScale(textScale + 0.1f) }, size = 32.dp, background = g.fill)
                         }
                     },
+                )
+            }
+        }
+        item(key = "learn") {
+            Section(
+                Modifier.padding(top = 26.dp),
+                header = "Learning Japanese",
+                footer = "Words are read aloud by your phone's own text-to-speech. If nothing plays, add a Japanese voice there.",
+            ) {
+                Cell("Learn button on translations", subtitle = "Break a passage into words, with readings and meanings",
+                    trailing = { GlossSwitch(learnButton, { c.reading.setLearnButton(it) }) })
+                Cell("Japanese voice…", titleColor = g.lapis, chevron = false, onClick = {
+                    runCatching { context.startActivity(android.content.Intent("com.android.settings.TTS_SETTINGS")) }
+                        .onFailure { context.startActivity(android.content.Intent(android.provider.Settings.ACTION_SETTINGS)) }
+                })
+                Cell(
+                    "Saved words", divider = false,
+                    trailing = { Text("${savedWords.size}", style = Gloss.type.body, color = g.secondary) },
                 )
             }
         }
@@ -208,7 +231,12 @@ fun SettingsScreen(nav: Nav) {
                     LinkText("Website") { uri.openUri("https://aymansal1.github.io/Gloss/") }
                     LinkText("Gaming Alexandria") { uri.openUri("https://www.gamingalexandria.com") }
                     LinkText("Source code") { uri.openUri("https://github.com/Aymansal1/Gloss") }
+                    LinkText("Welcome tour") { app.gloss.ui.intro.Intro.show() }
                 }
+                Text(
+                    "Dictionary from JMdict and KANJIDIC2 by the Electronic Dictionary Research and Development Group, stroke order from KanjiVG by Ulrich Apel, magazine notes from Wikipedia. All under CC BY-SA.",
+                    style = Gloss.type.caption, color = g.tertiary, textAlign = TextAlign.Center,
+                )
                 Text("AGPL-3.0 · Fonts under the SIL Open Font License", style = Gloss.type.caption, color = g.tertiary, textAlign = TextAlign.Center)
             }
         }
