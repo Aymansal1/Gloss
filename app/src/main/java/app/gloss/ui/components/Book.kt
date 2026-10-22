@@ -38,6 +38,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.asImageBitmap
@@ -46,7 +47,6 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.layer.GraphicsLayer
-import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -60,6 +60,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toIntSize
@@ -198,9 +200,21 @@ fun SpinnableBook(
         }
         Box(Modifier.width(thickness).fillMaxHeight().recordInto(spine)) { Spine(info, Modifier.fillMaxSize()) }
 
-        Spacer(Modifier.fillMaxSize().drawBehind { drawBook(a, thickness.toPx(), front, rear, spine, pigment) })
+        // Snapshot the faces into bitmaps to map onto the box (layers themselves don't take a
+        // perspective transform everywhere). Again a little later, once a cover image arrives.
+        var faces by remember(info.id) { mutableStateOf<Faces?>(null) }
+        LaunchedEffect(info.id, back, thickness) {
+            for (wait in longArrayOf(32, 300, 900, 2200, 5000)) {
+                delay(wait)
+                runCatching { Faces(front.toImageBitmap(), rear.toImageBitmap(), spine.toImageBitmap()) }
+                    .getOrNull()?.let { faces = it }
+            }
+        }
+        Spacer(Modifier.fillMaxSize().drawBehind { drawBook(a, thickness.toPx(), faces, pigment) })
     }
 }
+
+private class Faces(val front: ImageBitmap, val back: ImageBitmap, val spine: ImageBitmap)
 
 private fun wrap(degrees: Float) = ((degrees - REST) % 360f + 360f) % 360f + REST
 
@@ -216,7 +230,7 @@ private val LIGHT = run { val x = -0.42f; val z = 1f; val n = sqrt(x * x + z * z
  * Draws the book turned [deg] degrees about its vertical axis (positive brings the spine
  * toward you). Each visible side is a texture mapped onto its corners in perspective.
  */
-private fun DrawScope.drawBook(deg: Float, t: Float, front: GraphicsLayer, back: GraphicsLayer, spine: GraphicsLayer, pigment: Color) {
+private fun DrawScope.drawBook(deg: Float, t: Float, faces: Faces?, pigment: Color) {
     val w = size.width
     val h = size.height
     val hw = w / 2f
@@ -260,7 +274,7 @@ private fun DrawScope.drawBook(deg: Float, t: Float, front: GraphicsLayer, back:
 
     val n = ((deg % 360f) + 540f) % 360f - 180f
     if (frontQuad.facing()) mapOnto(frontQuad, w, h) {
-        drawLayer(front)
+        texture(faces?.front, w, h, pigment)
         hinge(w, h, spineOnRight = true)
         // The coated stock catches the light as the cover turns past it.
         val sheen = 0.2f * exp(-((n - 8f) / 34f).let { it * it })
@@ -274,12 +288,12 @@ private fun DrawScope.drawBook(deg: Float, t: Float, front: GraphicsLayer, back:
         drawRect(Color.Black.copy(alpha = shade(0f, 1f)))
     }
     if (backQuad.facing()) mapOnto(backQuad, w, h) {
-        drawLayer(back)
+        texture(faces?.back, w, h, pigment.shade(0.2f))
         hinge(w, h, spineOnRight = false)
         drawRect(Color.Black.copy(alpha = shade(0f, -1f)))
     }
     if (spineQuad.facing()) mapOnto(spineQuad, t, h) {
-        drawLayer(spine)
+        texture(faces?.spine, t, h, pigment.shade(0.1f))
         // Rounded by the binding: lighter down the middle, darker where it meets the covers.
         drawRect(
             Brush.horizontalGradient(
@@ -293,6 +307,20 @@ private fun DrawScope.drawBook(deg: Float, t: Float, front: GraphicsLayer, back:
         pageEdges(t, h, pigment)
         drawRect(Color.Black.copy(alpha = shade(-1f, 0f)))
     }
+}
+
+/** [image] stretched over a [tw] x [th] side, or plain [fallback] until it's ready. */
+private fun DrawScope.texture(image: ImageBitmap?, tw: Float, th: Float, fallback: Color) {
+    if (image == null || image.width == 0) {
+        drawRect(fallback, size = Size(tw, th))
+        return
+    }
+    drawImage(
+        image,
+        srcOffset = IntOffset.Zero, srcSize = IntSize(image.width, image.height),
+        dstOffset = IntOffset.Zero, dstSize = IntSize(tw.roundToInt(), th.roundToInt()),
+        filterQuality = FilterQuality.High,
+    )
 }
 
 /** A side faces the viewer when its corners still run clockwise on screen. */
